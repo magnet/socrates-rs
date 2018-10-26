@@ -1,0 +1,17 @@
+[package]
+name = "socrates-launcher"
+version = "0.0.1"
+authors = ["Simon Chemouil <simon.chemouil@lambdacube.fr>"]
+license = "MIT OR Apache-2.0"
+readme = "../README.md"
+keywords = ["dynamic", "module", "service", "libloading"]
+repository = "https://github.com/magnet/socrates-rs"
+description = """
+A simple launcher for `socrates` dynamic module system.
+"""
+categories = ["config"]
+edition = "2018"
+
+
+[dependencies]
+socrates = { path = "../socrates", version = "0.0.1" }

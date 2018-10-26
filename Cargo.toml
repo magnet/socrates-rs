@@ -1,0 +1,6 @@
+[workspace]
+members = [
+  "socrates",
+  "socrates-core",
+  "socrates-launcher",
+]
