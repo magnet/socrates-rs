@@ -14,3 +14,5 @@ edition = "2018"
 
 [dependencies]
 socrates-core = { path = "../socrates-core", version = "0.0.1" }
+libloading = "0.5"
+query_interface = "0.3.5"

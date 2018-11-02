@@ -1,0 +1,14 @@
+[package]
+name = "example-consumer"
+version = "0.1.0"
+authors = ["Simon Chemouil <simon.chemouil@lambdacube.fr>"]
+edition = "2018"
+
+[lib]
+name = "exampleconsumer"
+crate-type = ["dylib"]
+
+
+[dependencies]
+socrates = { path = "../../socrates", version = "0.0.1" }
+example-api = { path = "../example-api", version = "0.1.0" }

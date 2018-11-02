@@ -3,4 +3,5 @@ members = [
   "socrates",
   "socrates-core",
   "socrates-launcher",
+  "socrates-macro",
 ]

@@ -1,0 +1,13 @@
+[package]
+name = "socrates-macro"
+version = "0.0.1"
+authors = ["Simon Chemouil <simon.chemouil@lambdacube.fr>"]
+edition = "2018"
+
+[dependencies]
+synom = "0.11"
+syn = {version= "0.15.17", features = ["full"] }
+quote = "0.6.9"
+
+[lib]
+proc-macro = true

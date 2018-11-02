@@ -1,0 +1,15 @@
+[package]
+name = "example-provider"
+version = "0.1.0"
+authors = ["Simon Chemouil <simon.chemouil@lambdacube.fr>"]
+edition = "2018"
+
+[lib]
+name = "exampleprovider"
+crate-type = ["dylib"]
+
+[dependencies]
+example-api = {path = "../example-api", version = "0.1.0"}
+socrates = { path = "../../socrates", version = "0.0.1" }
+socrates-macro = { path = "../../socrates-macro", version = "0.0.1" }
+query_interface = { version = "0.3.5" }

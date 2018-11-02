@@ -9,7 +9,7 @@ repository = "https://github.com/magnet/socrates-rs"
 description = """
 The core traits and types in for the `socrates` library.
 """
-categories = ["configuration"]
+categories = ["config"]
 edition = "2018"
 
 
