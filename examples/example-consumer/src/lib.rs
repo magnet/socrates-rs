@@ -1,6 +1,7 @@
 extern crate socrates;
 
-use socrates::socrates::{Activator, DynModContext, Result};
+use socrates::module::{Activator, Context};
+use socrates::Result;
 
 extern crate example_api;
 use example_api::foos::{foodoo, Foo, FooFighter};
@@ -13,7 +14,7 @@ pub fn create_activator() -> Box<dyn Activator> {
 pub struct MyActivator;
 
 impl Activator for MyActivator {
-    fn start(&self, ctx: &dyn DynModContext) -> Result<()> {
+    fn start(&self, ctx: &dyn Context) -> Result<()> {
         println!("I'm started (consumer)");
 
         // This is our guard, when this is dropped we must not use the service anymore.

@@ -1,9 +1,9 @@
-extern crate socrates;
-
 #[macro_use]
 extern crate socrates_macro;
 
-use socrates::socrates::{Activator, DynModContext, Result, Service, ServiceRegistration};
+use socrates::Result;
+use socrates::module::{Activator, Context};
+use socrates::service::{Service, ServiceRegistration};
 
 #[no_mangle]
 pub fn create_activator() -> Box<dyn Activator> {
@@ -34,7 +34,7 @@ impl MyActivator {
 }
 
 impl Activator for MyActivator {
-    fn start(&self, ctx: &dyn DynModContext) -> Result<()> {
+    fn start(&self, ctx: &dyn Context) -> Result<()> {
         println!("I'm started (plugin)");
         let srv_reg = ctx.register_service("foo", Arc::new(MyFooFighter { x: Mutex::new(0) }))?;
         let mut self_reg = self.foo_fighter_reg.lock().unwrap();

@@ -1,6 +1,5 @@
-extern crate socrates;
-
-use socrates::socrates::{DynModContainer, ServiceEvent, ServiceEventListener};
+use socrates::module::Container;
+use socrates::service::{ServiceEvent, ServiceEventListener};
 
 struct MyListener;
 
@@ -12,7 +11,7 @@ impl ServiceEventListener for MyListener {
 
 fn main() {
     println!("True knowledge exists in knowing that you know nothing.");
-    let dmc = DynModContainer::new();
+    let dmc = Container::new();
 
     let _listener_guard = dmc.register_listener(Box::new(MyListener));
 
