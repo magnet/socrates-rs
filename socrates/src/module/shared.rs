@@ -4,7 +4,7 @@ pub fn register_listener(
     svc_registry: &Arc<Mutex<ServiceRegistry>>,
     listener: Box<dyn ServiceEventListener>,
 ) -> Result<ServiceEventListenerGuard> {
-    let mut reg = svc_registry.lock().unwrap();
+    let mut reg = svc_registry.lock();
 
     let listener_id = reg.listeners_mut().insert_listener(listener);
     Ok(ServiceEventListenerGuard::new(

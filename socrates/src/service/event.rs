@@ -33,7 +33,7 @@ impl ServiceEventListenerGuard {
 
 impl Drop for ServiceEventListenerGuard {
     fn drop(&mut self) {
-        let mut reg = self.svc_registry.lock().unwrap();
+        let mut reg = self.svc_registry.lock();
         reg.listeners_mut().remove_listener(self.listener_id);
     }
 }

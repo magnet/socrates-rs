@@ -56,7 +56,7 @@ impl Context for Dynamod {
         svc_name: &str,
         svc: Arc<dyn Service>,
     ) -> Result<ServiceRegistration> {
-        let mut reg = self.svc_registry.lock().unwrap();
+        let mut reg = self.svc_registry.lock();
         let service_id = reg.register_service(svc_name, svc, self.id);
 
         let srv_reg = ServiceRegistration::new(
@@ -68,17 +68,17 @@ impl Context for Dynamod {
     }
 
     fn get_service_id(&self, svc_name: &str) -> Option<ServiceId> {
-        let reg = self.svc_registry.lock().unwrap();
+        let reg = self.svc_registry.lock();
         reg.get_service_id(svc_name)
     }
 
     fn get_service_ref(&self, svc_id: ServiceId) -> Option<ServiceRef> {
-        let reg = self.svc_registry.lock().unwrap();
+        let reg = self.svc_registry.lock();
         reg.get_service_ref(svc_id)
     }
 
     fn get_service(&self, svc_id: ServiceId) -> Option<Svc<dyn Service>> {
-        let reg = self.svc_registry.lock().unwrap();
+        let reg = self.svc_registry.lock();
         reg.get_service_object(svc_id)
             .map(|x| Svc::new(x, svc_id, self.id, Arc::clone(&self.svc_registry)))
     }

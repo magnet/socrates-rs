@@ -18,7 +18,7 @@ pub fn create_foo_fighter() -> Box<dyn FooFighter> {
 use example_api::foos::{Foo, FooFighter};
 
 use std::sync::Arc;
-use std::sync::Mutex;
+use parking_lot::Mutex;
 
 #[derive(Default)]
 pub struct MyActivator {
@@ -37,7 +37,7 @@ impl Activator for MyActivator {
     fn start(&self, ctx: &dyn Context) -> Result<()> {
         println!("I'm started (plugin)");
         let srv_reg = ctx.register_service("foo", Arc::new(MyFooFighter { x: Mutex::new(0) }))?;
-        let mut self_reg = self.foo_fighter_reg.lock().unwrap();
+        let mut self_reg = self.foo_fighter_reg.lock();
         *self_reg = Some(srv_reg);
         Ok(())
     }
@@ -61,7 +61,7 @@ impl MyFooFighter {
 
 impl FooFighter for MyFooFighter {
     fn do_foo(&self, f: &Foo) -> u32 {
-        let mut v = self.x.lock().unwrap();
+        let mut v = self.x.lock();
         if *v == 0 {
             let r = f.x;
             *v = r;

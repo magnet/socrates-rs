@@ -19,7 +19,7 @@ impl ServiceRegistration {
 
 impl Drop for ServiceRegistration {
     fn drop(&mut self) {
-        let mut reg = self.svc_registry.lock().unwrap();
+        let mut reg = self.svc_registry.lock();
         reg.unregister_service(&self.service_ref);
     }
 }

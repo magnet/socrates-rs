@@ -71,7 +71,7 @@ impl<T: ?Sized> Drop for Svc<T> {
     fn drop(&mut self) {
         // Could be none if panic during Svc<dyn Service>::cast
         if self.svc_registry.is_some() {
-            let mut reg = self.svc_registry.as_ref().unwrap().lock().unwrap();
+            let mut reg = self.svc_registry.as_ref().unwrap().lock();
             reg.remove_use(self.service_id, self.user_id);
         }
     }

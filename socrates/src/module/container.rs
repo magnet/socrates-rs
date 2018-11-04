@@ -16,7 +16,7 @@ impl Container {
     }
 
     pub fn install(&self, path: &str) -> Result<()> {
-        let mut mods = self.modules.lock().unwrap();
+        let mut mods = self.modules.lock();
         let id = (*mods).len() as u32;
         let lib = libloading::Library::new(path)?;
         let acti;
@@ -33,18 +33,18 @@ impl Container {
     }
 
     pub fn uninstall(&self, idx: DynamodId) -> Result<()> {
-        let mut mods = self.modules.lock().unwrap();
+        let mut mods = self.modules.lock();
         let dyn_mod = mods.remove(idx as usize);
 
         {
-            let mut reg = self.svc_registry.lock().unwrap();
+            let mut reg = self.svc_registry.lock();
 
             // remove services owned by self from registry
             reg.remove_owned(dyn_mod.id);
         }
 
         {
-            let mut zombie_mods = self.zombie_modules.lock().unwrap();
+            let mut zombie_mods = self.zombie_modules.lock();
             let zm = dyn_mod.zombify();
 
             zombie_mods.push(zm);
@@ -53,19 +53,19 @@ impl Container {
     }
 
     pub fn start(&self, idx: DynamodId) -> Result<()> {
-        let mods_ptr = self.modules.lock().unwrap();
+        let mods_ptr = self.modules.lock();
         let md = mods_ptr.get(idx as usize).unwrap();
         md.start()
     }
 
     pub fn stop(&self, idx: DynamodId) -> Result<()> {
-        let mods_ptr = self.modules.lock().unwrap();
+        let mods_ptr = self.modules.lock();
         let md = mods_ptr.get(idx as usize).unwrap();
         md.stop()
     }
 
     pub fn print_installed_modules(&self) {
-        let mods = self.modules.lock().unwrap();
+        let mods = self.modules.lock();
         for md in mods.iter() {
             println!("{}", md.path);
         }
