@@ -60,7 +60,7 @@ impl MyFooFighter {
 }
 
 impl FooFighter for MyFooFighter {
-    fn do_foo(&self, f: Foo) -> u32 {
+    fn do_foo(&self, f: &Foo) -> u32 {
         let mut v = self.x.lock().unwrap();
         if *v == 0 {
             let r = f.x;

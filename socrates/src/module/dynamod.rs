@@ -67,14 +67,19 @@ impl Context for Dynamod {
         Ok(srv_reg)
     }
 
-    fn get_service_ref(&self, svc_name: &str) -> Option<ServiceRef> {
+    fn get_service_id(&self, svc_name: &str) -> Option<ServiceId> {
         let reg = self.svc_registry.lock().unwrap();
-        reg.get_service_ref(svc_name)
+        reg.get_service_id(svc_name)
     }
 
-    fn get_service(&self, svc_ref: &ServiceRef) -> Option<ServiceGuard> {
+    fn get_service_ref(&self, svc_id: ServiceId) -> Option<ServiceRef> {
         let reg = self.svc_registry.lock().unwrap();
-        reg.get_service_object(svc_ref)
-            .map(|x| ServiceGuard::new(x, svc_ref.id, self.id, Arc::clone(&self.svc_registry)))
+        reg.get_service_ref(svc_id)
+    }
+
+    fn get_service(&self, svc_id: ServiceId) -> Option<Svc<dyn Service>> {
+        let reg = self.svc_registry.lock().unwrap();
+        reg.get_service_object(svc_id)
+            .map(|x| Svc::new(x, svc_id, self.id, Arc::clone(&self.svc_registry)))
     }
 }

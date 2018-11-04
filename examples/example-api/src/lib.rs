@@ -8,10 +8,10 @@ pub mod foos {
     }
 
     pub trait FooFighter {
-        fn do_foo(&self, f: Foo) -> u32;
+        fn do_foo(&self, f: &Foo) -> u32;
     }
 
-    pub fn foodoo(ff: &dyn FooFighter, f: Foo) -> u32 {
+    pub fn foodoo(ff: &dyn FooFighter, f: &Foo) -> u32 {
         ff.do_foo(f)
     }
 
@@ -25,7 +25,7 @@ mod tests {
     struct MyFooFighter;
 
     impl FooFighter for MyFooFighter {
-        fn do_foo(&self, f: Foo) -> u32 {
+        fn do_foo(&self, f: &Foo) -> u32 {
             f.x
         }
     }
@@ -37,7 +37,7 @@ mod tests {
             x: 5,
             y: String::from("foo"),
         };
-        let res = foodoo(&ff, f);
+        let res = foodoo(&ff, &f);
         println!("res: {}", res)
         // assert_eq!(foo(), 42);
     }

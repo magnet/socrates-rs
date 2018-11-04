@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 mod event;
-mod guard;
+mod svc;
 mod reference;
 mod registration;
 mod registry;
@@ -12,7 +12,7 @@ use super::module::*;
 pub use self::event::ServiceEvent;
 pub use self::event::ServiceEventListener;
 pub use self::event::ServiceEventListenerGuard;
-pub use self::guard::ServiceGuard;
+pub use self::svc::Svc;
 pub use self::reference::ServiceRef;
 pub use self::registration::ServiceRegistration;
 pub use self::registry::ServiceRegistry;

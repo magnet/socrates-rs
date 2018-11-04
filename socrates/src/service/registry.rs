@@ -94,15 +94,17 @@ impl ServiceRegistry {
         }
     }
 
-    pub fn get_service_ref(&self, svc_name: &str) -> Option<ServiceRef> {
-        self.by_name
-            .get(svc_name)
-            .map(|id| ServiceRegistry::make_service_ref(*id))
+    pub fn get_service_id(&self, svc_name: &str) -> Option<ServiceId> {
+        self.by_name.get(svc_name).map(|id| *id)
     }
 
-    pub fn get_service_object(&self, svc_ref: &ServiceRef) -> Option<Arc<dyn Service>> {
+    pub fn get_service_ref(&self, svc_id: ServiceId) -> Option<ServiceRef> {
+        Some(ServiceRegistry::make_service_ref(svc_id)) // blanket impl
+    }
+
+    pub fn get_service_object(&self, svc_id: ServiceId) -> Option<Arc<dyn Service>> {
         self.by_id
-            .get(&svc_ref.id)
+            .get(&svc_id)
             .map(|x| Arc::clone(&x.service_object))
     }
 
