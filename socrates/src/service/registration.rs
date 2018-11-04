@@ -7,12 +7,12 @@ pub struct ServiceRegistration {
 
 impl ServiceRegistration {
     pub fn new(
-        _service_ref: ServiceRef,
-        _svc_registry: Arc<Mutex<ServiceRegistry>>,
+        service_ref: ServiceRef,
+        svc_registry: Arc<Mutex<ServiceRegistry>>,
     ) -> ServiceRegistration {
         ServiceRegistration {
-            service_ref: _service_ref,
-            svc_registry: _svc_registry,
+            service_ref,
+            svc_registry,
         }
     }
 }

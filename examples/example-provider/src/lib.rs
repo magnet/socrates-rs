@@ -20,6 +20,7 @@ use example_api::foos::{Foo, FooFighter};
 use std::sync::Arc;
 use parking_lot::Mutex;
 
+
 #[derive(Default)]
 pub struct MyActivator {
     foo_fighter_reg: Mutex<Option<ServiceRegistration>>,
@@ -34,9 +35,10 @@ impl MyActivator {
 }
 
 impl Activator for MyActivator {
-    fn start(&self, ctx: &dyn Context) -> Result<()> {
+    fn start(&self, ctx: Context) -> Result<()> {
         println!("I'm started (plugin)");
-        let srv_reg = ctx.register_service("foo", Arc::new(MyFooFighter { x: Mutex::new(0) }))?;
+        let srv = Arc::new(MyFooFighter { x: Mutex::new(0) });
+        let srv_reg = ctx.register_service_typed::<FooFighter>(srv)?;
         let mut self_reg = self.foo_fighter_reg.lock();
         *self_reg = Some(srv_reg);
         Ok(())
@@ -47,6 +49,7 @@ impl Activator for MyActivator {
         Ok(())
     }
 }
+
 
 #[component(services: FooFighter)]
 struct MyFooFighter {

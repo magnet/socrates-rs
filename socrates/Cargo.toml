@@ -17,3 +17,4 @@ socrates-core = { path = "../socrates-core", version = "0.0.1" }
 libloading = "0.5"
 query_interface = "0.3.5"
 parking_lot = "0.6.4"
+hashbrown = "0.1.4"

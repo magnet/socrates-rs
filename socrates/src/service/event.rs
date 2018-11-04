@@ -13,7 +13,6 @@ pub enum ServiceEvent {
     ServiceUnregistered(ServiceRef),
 }
 
-
 pub struct ServiceEventListenerGuard {
     listener_id: ListenerId,
     svc_registry: Arc<Mutex<ServiceRegistry>>,
@@ -21,12 +20,12 @@ pub struct ServiceEventListenerGuard {
 
 impl ServiceEventListenerGuard {
     pub fn new(
-        _listener_id: ListenerId,
-        _svc_registry: Arc<Mutex<ServiceRegistry>>,
+        listener_id: ListenerId,
+        svc_registry: Arc<Mutex<ServiceRegistry>>,
     ) -> ServiceEventListenerGuard {
         ServiceEventListenerGuard {
-            listener_id: _listener_id,
-            svc_registry: _svc_registry,
+            listener_id,
+            svc_registry,
         }
     }
 }

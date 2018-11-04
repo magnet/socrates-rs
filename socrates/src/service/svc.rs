@@ -10,22 +10,21 @@ pub struct Svc<T: ?Sized> {
 
 impl<T: ?Sized> Svc<T> {
     pub fn new(
-        _service: Arc<T>,
-        _service_id: ServiceId,
-        _user_id: DynamodId,
-        _svc_registry: Arc<Mutex<ServiceRegistry>>,
+        service: Arc<T>,
+        service_id: ServiceId,
+        user_id: DynamodId,
+        svc_registry: Arc<Mutex<ServiceRegistry>>,
     ) -> Svc<T>
     where
         T: Service,
     {
         Svc {
-            service: Some(_service),
-            service_id: _service_id,
-            user_id: _user_id,
-            svc_registry: Some(_svc_registry),
+            service: Some(service),
+            svc_registry: Some(svc_registry),
+            service_id,
+            user_id,
         }
     }
-
 }
 
 impl Svc<dyn Service> {
@@ -70,8 +69,8 @@ impl<T: ?Sized> AsRef<T> for Svc<T> {
 impl<T: ?Sized> Drop for Svc<T> {
     fn drop(&mut self) {
         // Could be none if panic during Svc<dyn Service>::cast
-        if self.svc_registry.is_some() {
-            let mut reg = self.svc_registry.as_ref().unwrap().lock();
+        if let Some(ref registry) = self.svc_registry {
+            let mut reg = registry.as_ref().lock();
             reg.remove_use(self.service_id, self.user_id);
         }
     }

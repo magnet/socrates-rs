@@ -1,5 +1,6 @@
 use super::*;
 
+#[derive(Default)]
 pub struct Container {
     svc_registry: Arc<Mutex<ServiceRegistry>>,
     modules: Mutex<Vec<Dynamod>>,
@@ -8,11 +9,7 @@ pub struct Container {
 
 impl Container {
     pub fn new() -> Container {
-        Container {
-            modules: Mutex::new(Vec::new()),
-            zombie_modules: Mutex::new(Vec::new()),
-            svc_registry: Arc::new(Mutex::new(ServiceRegistry::new())),
-        }
+        Default::default()
     }
 
     pub fn install(&self, path: &str) -> Result<()> {
@@ -77,4 +74,16 @@ impl Container {
     ) -> Result<ServiceEventListenerGuard> {
         register_listener(&self.svc_registry, listener)
     }
+}
+pub fn register_listener(
+    svc_registry: &Arc<Mutex<ServiceRegistry>>,
+    listener: Box<dyn ServiceEventListener>,
+) -> Result<ServiceEventListenerGuard> {
+    let mut reg = svc_registry.lock();
+
+    let listener_id = reg.listeners_mut().insert_listener(listener);
+    Ok(ServiceEventListenerGuard::new(
+        listener_id,
+        Arc::clone(&svc_registry),
+    ))
 }

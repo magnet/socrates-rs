@@ -1,5 +1,15 @@
 use super::*;
 
+pub struct NoopActivator;
+impl Activator for NoopActivator {
+    fn start(&self, _ctx: Context) -> Result<()> {
+        Ok(())
+    }
+    fn stop(&self) -> Result<()> {
+        Ok(())
+    }
+}
+
 pub fn register_listener(
     svc_registry: &Arc<Mutex<ServiceRegistry>>,
     listener: Box<dyn ServiceEventListener>,
@@ -11,15 +21,4 @@ pub fn register_listener(
         listener_id,
         Arc::clone(&svc_registry),
     ))
-}
-
-
-pub struct NoopActivator;
-impl Activator for NoopActivator {
-    fn start(&self, _ctx: &dyn Context) -> Result<()> {
-        Ok(())
-    }
-    fn stop(&self) -> Result<()> {
-        Ok(())
-    }
 }

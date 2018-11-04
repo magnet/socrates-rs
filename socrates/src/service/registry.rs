@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use hashbrown::HashMap;
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -59,14 +59,14 @@ impl ServiceRegistry {
     pub fn register_service(
         &mut self,
         svc_name: &str,
-        svc: Arc<dyn Service>,
+        service_object: Arc<dyn Service>,
         owner_id: DynamodId,
     ) -> ServiceId {
         let service = RegisteredService {
             name: svc_name.into(),
-            owner_id: owner_id,
+            owner_id,
             used_by_count: HashMap::new(),
-            service_object: svc,
+            service_object,
         };
         let svc_name = Rc::clone(&service.name);
         let new_id = self.curr_id + 1;
