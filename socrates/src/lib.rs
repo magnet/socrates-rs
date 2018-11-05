@@ -7,6 +7,8 @@ pub mod service;
 
 pub type Result<T> = std::result::Result<T, String>;
 
+
+
 #[cfg(test)]
 mod tests {
     #[test]
