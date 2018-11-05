@@ -1,18 +1,15 @@
-use std::sync::{Arc, Weak};
+use super::service::*;
 use parking_lot::Mutex;
+use std::sync::{Arc, Weak};
 
 mod activator;
-mod context;
 mod container;
+mod context;
 mod dynamod;
-mod shared;
-
-use super::service::*;
-use self::shared::*;
 
 pub use super::Result;
 pub type DynamodId = u32;
-pub use self::dynamod::Dynamod;
-pub use self::container::Container;
 pub use self::activator::Activator;
+pub use self::container::Container;
 pub use self::context::Context;
+pub use self::dynamod::Dynamod;

@@ -10,6 +10,8 @@ impl ServiceEventListener for MyListener {
 }
 
 fn main() {
+    env_logger::init();
+
     println!("True knowledge exists in knowing that you know nothing.");
     let mut dmc = Container::new();
 
@@ -25,6 +27,8 @@ fn main() {
     dmc.start(1).expect("couldn't start consumer");
 
     dmc.stop(0).expect("couldn't stop provider");
+    dmc.stop(1).expect("couldn't stop provider");
+
     dmc.uninstall(0).expect("couldn't uninstall provider");
 
     println!("We're done!");

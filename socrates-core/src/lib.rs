@@ -1,3 +1,5 @@
+// Placeholder for future modularisation of the lib
+
 #[cfg(test)]
 mod tests {
     #[test]

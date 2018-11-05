@@ -1,18 +1,21 @@
-pub mod foos {
+pub mod greet {
+    use socrates::service::Service;
 
-    #[repr(C)]
     #[derive(Clone, Debug)]
-    pub struct Foo {
-        pub x: u32,
-        pub y: String,
+    pub enum Idiom {
+        Formal,
+        Regular,
+        Slang,
     }
 
-    pub trait FooFighter {
-        fn do_foo(&self, f: &Foo) -> u32;
+    #[derive(Clone, Debug)]
+    pub struct GreetRequest {
+        pub who: String,
+        pub idiom: Idiom,
     }
 
-    pub fn foodoo(ff: &dyn FooFighter, f: &Foo) -> u32 {
-        ff.do_foo(f)
+    pub trait Greeter: Service {
+        fn greet(&self, req: &GreetRequest) -> String;
     }
 
 }
@@ -20,25 +23,24 @@ pub mod foos {
 #[cfg(test)]
 mod tests {
 
-    use super::foos::{foodoo, Foo, FooFighter};
+    use super::greet::{GreetRequest, Greeter, Idiom};
 
-    struct MyFooFighter;
+    struct MyGreeter;
 
-    impl FooFighter for MyFooFighter {
-        fn do_foo(&self, f: &Foo) -> u32 {
-            f.x
+    impl Greeter for MyGreeter {
+        fn greet(&self, req: &GreetRequest) -> String {
+            format!("Hello {}", req.who).into()
         }
     }
 
     #[test]
     fn test_foo() {
-        let ff = MyFooFighter;
-        let f = Foo {
-            x: 5,
-            y: String::from("foo"),
+        let mg = MyGreeter;
+        let req = GreetRequest {
+            who: "world".into(),
+            idiom: Idiom::Regular,
         };
-        let res = foodoo(&ff, &f);
-        println!("res: {}", res)
-        // assert_eq!(foo(), 42);
+
+        assert_eq!(mg.greet(&req), "Hello world");
     }
 }

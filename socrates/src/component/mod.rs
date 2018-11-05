@@ -1,3 +1,6 @@
+// WIP experimenting
+// Playground for service components
+
 use super::module::*;
 use super::service::*;
 
@@ -5,24 +8,21 @@ mod definition;
 
 pub use self::definition::ComponentDefinition;
 
-trait Component {
-}
+trait Component {}
 
 struct ComponentData {
     references: std::collections::HashMap<String, Svc<dyn Service>>,
     // config: String // TODO JSon
 }
 
-struct ComponentRunner {
-
-} 
+struct ComponentRunner {}
 
 #[cfg(test)]
 mod tests {
     use super::definition::*;
     use super::*;
 
-    trait Greeter {
+    trait Greeter: Service {
         fn greet(&self, who: &str) -> String;
     }
 
@@ -43,6 +43,10 @@ mod tests {
             FormalGreeter
         }
     }
+
+    impl Service for FormalGreeter {}
+
+    query_interface::interfaces!(FormalGreeter: Greeter);
 
     struct GreetPrinter {
         greeter: Svc<dyn Greeter>,
@@ -70,18 +74,16 @@ mod tests {
         data: ComponentData,
         dynamid_id: DynamodId,
         required_services: HashMap<String, Option<ServiceId>>,
-        instances: Vec<ComponentInstance> // rather a forall construct
+        instances: Vec<ComponentInstance>, // rather a forall construct
     }
     impl ComponentController {
-        pub fn init (&mut self) {
+        pub fn init(&mut self) {
             // ServiceTracker.
             // context.register_listener()
         }
     }
 
-    struct ComponentInstance {
-
-    }
+    struct ComponentInstance {}
 
     #[test]
     fn test_foo() {
@@ -101,8 +103,6 @@ mod tests {
             }],
             ..Default::default()
         };
-
-
 
         println!("{:?}", formal_greeter_def);
         println!("{:?}", greet_printer_def);

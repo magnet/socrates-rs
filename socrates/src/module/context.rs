@@ -83,7 +83,9 @@ impl Context {
             .map(|x| Svc::new(x.1, x.0, self.dynamod_id, self.shared_service_manager()))
     }
 
-    pub fn register_service_typed<T: ?Sized>(
+    // TODO should we bound on Send + Sync or Service...?
+    // Service is better, but requires a dependency
+    pub fn register_service_typed<T: Service + ?Sized>(
         &self,
         svc: Box<dyn Service>,
     ) -> Result<ServiceRegistration> {
@@ -91,13 +93,13 @@ impl Context {
         self.register_service(&srv_name, Default::default(), svc)
     }
 
-    pub fn get_service_typed<T: std::any::Any + ?Sized>(&self) -> Option<Svc<T>> {
+    pub fn get_service_typed<T: Service + ?Sized>(&self) -> Option<Svc<T>> {
         let srv_name = Context::get_trait_name::<T>();
         self.get_service_by_name(&srv_name)
             .and_then(|svc| svc.cast::<T>().ok())
     }
 
-    pub fn get_trait_name<T: ?Sized>() -> &'static str {
+    fn get_trait_name<T: ?Sized>() -> &'static str {
         unsafe { type_name::<T>() }
     }
 

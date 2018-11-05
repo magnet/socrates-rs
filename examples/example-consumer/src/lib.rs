@@ -4,19 +4,17 @@ use socrates::module::{Activator, Context};
 use socrates::service::Svc;
 use socrates::Result;
 
-extern crate example_api;
-use example_api::foos::{Foo, FooFighter};
+use example_api::greet::{GreetRequest, Greeter, Idiom};
 
 #[no_mangle]
 pub fn create_activator() -> Box<dyn Activator> {
     Box::new(MyActivator::new())
 }
 
-use socrates::service::query::SvcTracker;
-
 #[derive(Default)]
-pub struct MyActivator;
-
+pub struct MyActivator {
+    consumer: Option<MyConsumer>,
+}
 
 impl MyActivator {
     pub fn new() -> MyActivator {
@@ -24,69 +22,53 @@ impl MyActivator {
     }
 }
 
-// struct CtxHolder<'a> {
-//     ctx: Context,
-//     tracker: Option<SvcTracker<'a>>,
-// }
-
-// impl<'a> CtxHolder<'a> {
-//     pub fn new(ctx: Context) -> CtxHolder<'a> {
-//         CtxHolder { ctx, tracker: None }
-//     }
-
-//     pub fn activate(&mut self) -> Result<()> {
-//         self.tracker = Some(SvcTracker::new(
-//             // 
-//             vec!["dyn example_api::foos::FooFighter".into()],
-//         ));
-//         self.tracker.unwrap().activate()?;
-//         Ok(())
-//     }
-// }
-
 impl Activator for MyActivator {
     fn start(&mut self, ctx: Context) -> Result<()> {
         println!("I'm started (consumer)");
 
+        // srv: Svc<dyn Greeter>, our only way to use the service
+        // it cannot be cloned, you must move it or request another
+        // instance from the framework!
+        if let Some(srv) = ctx.get_service_typed::<Greeter>() {
+            let c = MyConsumer::new(ctx, srv);
 
-        // This is our guard, when this is dropped we must not use the service anymore.
-        let srv = ctx.get_service_typed::<FooFighter>().unwrap();
-        let c = MyConsumer::new(ctx, srv);
-        println!("Got service");
+            println!("Got service");
 
-        let f1 = Foo {
-            x: 21,
-            y: String::from("foo"),
-        };
+            let req = GreetRequest {
+                who: "world".into(),
+                idiom: Idiom::Slang,
+            };
 
-        let x1 = c.do_it(&f1);
+            let result = c.do_it(&req);
 
-        let f2 = Foo {
-            x: 21,
-            y: String::from("foo"),
-        };
-        let x2 = c.do_it(&f2);
+            println!("got {}", result);
 
-        println!("got {}, {}", x1, x2);
-
+            self.consumer = Some(c);
+        } else {
+            println!(
+                "No service found! Maybe it's coming later... components will make that easy :-)"
+            );
+        }
         Ok(())
     }
 
     fn stop(&mut self) -> Result<()> {
+        println!("I'm stopped (consumer)");
+
         Ok(())
     }
 }
 
 struct MyConsumer {
     _ctx: Context,
-    foo_fighter: Svc<dyn FooFighter>,
+    greeter: Svc<dyn Greeter>,
 }
 
 impl MyConsumer {
-    pub fn new(_ctx: Context, foo_fighter: Svc<dyn FooFighter>) -> MyConsumer {
-        MyConsumer { _ctx, foo_fighter }
+    pub fn new(_ctx: Context, greeter: Svc<dyn Greeter>) -> MyConsumer {
+        MyConsumer { _ctx, greeter }
     }
-    pub fn do_it(&self, f: &Foo) -> u32 {
-        self.foo_fighter.do_foo(f)
+    pub fn do_it(&self, req: &GreetRequest) -> String {
+        self.greeter.greet(req)
     }
 }

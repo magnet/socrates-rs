@@ -82,10 +82,10 @@ impl ServiceManager {
         })
     }
 
-    pub fn remove_use(&self, svc_id: ServiceId, owner_id: DynamodId) {
+    pub fn remove_use(&self, svc_id: ServiceId, user_id: DynamodId) {
         let mut reg = self.registry.lock();
 
-        reg.remove_use(svc_id, owner_id);
+        reg.remove_use(svc_id, user_id);
     }
 }
 

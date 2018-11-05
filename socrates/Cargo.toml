@@ -2,7 +2,7 @@
 name = "socrates"
 version = "0.0.1"
 authors = ["Simon Chemouil <simon.chemouil@lambdacube.fr>"]
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 readme = "../README.md"
 keywords = ["dynamic", "module", "service", "libloading"]
 repository = "https://github.com/magnet/socrates-rs"

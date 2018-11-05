@@ -2,6 +2,14 @@
 name = "socrates-macro"
 version = "0.0.1"
 authors = ["Simon Chemouil <simon.chemouil@lambdacube.fr>"]
+license = "Apache-2.0"
+readme = "../README.md"
+keywords = ["dynamic", "module", "service", "libloading"]
+repository = "https://github.com/magnet/socrates-rs"
+description = """
+The core traits and types in for the `socrates` library.
+"""
+categories = ["config"]
 edition = "2018"
 
 [dependencies]

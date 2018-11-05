@@ -1,89 +1,59 @@
 #[macro_use]
 extern crate socrates_macro;
 
-use socrates::Result;
 use socrates::module::{Activator, Context};
 use socrates::service::{Service, ServiceRegistration};
+use socrates::Result;
 
 #[no_mangle]
 pub fn create_activator() -> Box<dyn Activator> {
-    Box::new(MyActivator::new())
+    Box::new(SimpleActivator::new())
 }
 
-#[no_mangle]
-pub fn create_foo_fighter() -> Box<dyn FooFighter> {
-    Box::new(MyFooFighter::new())
-}
-
-use example_api::foos::{Foo, FooFighter};
-
-use std::sync::Arc;
-use parking_lot::Mutex;
-
+use example_api::greet::{GreetRequest, Greeter, Idiom};
 
 #[derive(Default)]
-pub struct MyActivator {
-    foo_fighter_reg: Mutex<Option<ServiceRegistration>>,
+pub struct SimpleActivator {
+    registered_srv: Option<ServiceRegistration>,
 }
 
-impl MyActivator {
-    fn new() -> MyActivator {
-        MyActivator {
-            foo_fighter_reg: Mutex::new(None),
-        }
+impl SimpleActivator {
+    fn new() -> SimpleActivator {
+        Default::default()
     }
 }
 
-impl Activator for MyActivator {
+impl Activator for SimpleActivator {
     fn start(&mut self, ctx: Context) -> Result<()> {
-        println!("I'm started (plugin)");
-        let srv = Box::new(MyFooFighter { x: Mutex::new(0) });
-        let srv_reg = ctx.register_service_typed::<FooFighter>(srv)?;
-        let mut self_reg = self.foo_fighter_reg.lock();
-        *self_reg = Some(srv_reg);
+        println!("I'm started (provider)");
+        let srv = Box::new(SimpleGreeter::new());
+        let srv_reg = ctx.register_service_typed::<Greeter>(srv)?;
+        self.registered_srv = Some(srv_reg);
         Ok(())
     }
 
     fn stop(&mut self) -> Result<()> {
-        println!("I'm stopped (plugin)");
+        println!("I'm stopped (provider)");
         Ok(())
     }
 }
 
+#[component(services: Greeter)]
+struct SimpleGreeter;
 
-#[component(services: FooFighter)]
-struct MyFooFighter {
-    x: Mutex<u32>,
-}
-
-impl MyFooFighter {
-    fn new() -> MyFooFighter {
-        MyFooFighter { x: Mutex::new(0) }
+impl SimpleGreeter {
+    fn new() -> SimpleGreeter {
+        SimpleGreeter
     }
 }
 
-impl FooFighter for MyFooFighter {
-    fn do_foo(&self, f: &Foo) -> u32 {
-        let mut v = self.x.lock();
-        if *v == 0 {
-            let r = f.x;
-            *v = r;
-        } else {
-            *v = *v + f.x;
-        }
-        *v
+impl Greeter for SimpleGreeter {
+    fn greet(&self, req: &GreetRequest) -> String {
+        let gr = match req.idiom {
+            Idiom::Regular => "Hello",
+            Idiom::Formal => "Greetings to you, ",
+            Idiom::Slang => "Yo",
+        };
+        format!("{} {}", gr, req.who).into()
     }
-}
-
-pub mod example_plugin {
-
-    #[cfg(test)]
-    mod tests {
-
-        #[test]
-        fn test_foo() {
-            // assert_eq!(foo(), 42);
-        }
-    }
-
 }

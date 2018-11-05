@@ -1,3 +1,5 @@
+// WIP experimenting
+
 #![feature(extern_crate_item_prelude)]
 #![feature(custom_attribute)]
 extern crate proc_macro;
@@ -12,7 +14,7 @@ use syn::Item;
 
 #[proc_macro_attribute]
 pub fn component(attr: TokenStream, input: TokenStream) -> TokenStream {
-    println!("attr: \"{}\"", attr.to_string());
+    //println!("attr: \"{}\"", attr.to_string());
 
     let mut parseSvc = false;
     let mut svcs: Vec<String> = Vec::new();

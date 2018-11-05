@@ -1,8 +1,6 @@
 use hashbrown::HashMap;
 use std::rc::Rc;
 
-use log::debug;
-
 use super::*;
 
 pub struct RegisteredService {
@@ -20,7 +18,6 @@ impl RegisteredService {
             name: (*(self.name)).into(),
         }
     }
-
 }
 
 impl From<&RegisteredService> for ServiceRef {
@@ -37,7 +34,6 @@ pub struct ServiceRegistry {
     by_id: HashMap<ServiceId, RegisteredService>,
     by_name: HashMap<Rc<str>, BTreeSet<ServiceCoreProps>>,
     zombies: HashMap<ServiceId, RegisteredService>,
-
 }
 
 // Safe because Rc is never leaked outside.
@@ -47,8 +43,6 @@ impl ServiceRegistry {
     pub fn new() -> ServiceRegistry {
         Default::default()
     }
-
-
 
     pub fn register_service(
         &mut self,
@@ -92,6 +86,9 @@ impl ServiceRegistry {
             if !rs.used_by_count.is_empty() {
                 // We don't drop the service but make it unavailable for queries.
                 self.zombies.insert(svc_id, rs);
+            } else {
+                // TODO move to logging
+                println!("Dropping service (no users): {:?}", rs.make_service_ref());
             }
 
             Some(svc_ref)
@@ -108,9 +105,7 @@ impl ServiceRegistry {
     }
 
     pub fn get_service_ref(&self, svc_id: ServiceId) -> Option<ServiceRef> {
-        self.by_id
-            .get(&svc_id)
-            .map(|rs| rs.make_service_ref())
+        self.by_id.get(&svc_id).map(|rs| rs.make_service_ref())
     }
 
     pub fn get_service_object(
@@ -125,25 +120,23 @@ impl ServiceRegistry {
         })
     }
 
-    pub fn remove_use(&mut self, svc_id: ServiceId, owner_id: DynamodId) {
-        
+    pub fn remove_use(&mut self, svc_id: ServiceId, user_id: DynamodId) {
         if let Some(rs) = self.by_id.get_mut(&svc_id) {
-            if ServiceRegistry::decrement_use(rs, owner_id) == Some(0) {
-
-                rs.used_by_count.remove(&owner_id);
+            if ServiceRegistry::decrement_use(rs, user_id) == Some(0) {
+                rs.used_by_count.remove(&user_id);
             }
 
             self.by_name
                 .get_mut(&rs.name)
                 .map(|v| v.remove(&rs.core_props));
         } else if let Some(rs) = self.zombies.get_mut(&svc_id) {
-            if ServiceRegistry::decrement_use(rs, owner_id) == Some(0) {
-
-                rs.used_by_count.remove(&owner_id); 
+            if ServiceRegistry::decrement_use(rs, user_id) == Some(0) {
+                rs.used_by_count.remove(&user_id);
 
                 // We're in zombies, check clean-up
                 if rs.used_by_count.is_empty() {
-                    debug!("Dropping zombie service: {:?}", rs.make_service_ref());
+                    // TODO move to logging
+                    println!("Dropping zombie service: {:?}", rs.make_service_ref());
                     self.zombies.remove(&svc_id);
                 }
             }
@@ -152,8 +145,8 @@ impl ServiceRegistry {
 
     fn decrement_use(rs: &mut RegisteredService, owner_id: DynamodId) -> Option<u32> {
         rs.used_by_count.get_mut(&owner_id).map(|cr| {
-                *cr = (*cr) - 1;
-                *cr
-            })
+            *cr = (*cr) - 1;
+            *cr
+        })
     }
 }

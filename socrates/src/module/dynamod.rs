@@ -3,7 +3,7 @@ use super::*;
 pub struct Dynamod {
     pub id: DynamodId,
     pub path: String,
-    activator: Box<dyn Activator>,
+    activator: Option<Box<dyn Activator>>,
     svc_manager: Weak<ServiceManager>,
     _lib: DynamodLib, // must be last to be dropped last
 }
@@ -19,25 +19,34 @@ impl Dynamod {
         Dynamod {
             id,
             path: path.to_owned(),
-            activator,
+            activator: Some(activator),
             svc_manager,
             _lib: DynamodLib::new(id, _lib),
         }
     }
 
     pub fn start(&mut self) -> Result<()> {
-        self.activator
-            .start(Context::new(self.id, Weak::clone(&self.svc_manager)))
+        if let Some(ref mut activator) = self.activator {
+            activator.start(Context::new(self.id, Weak::clone(&self.svc_manager)))
+        } else {
+            Ok(())
+        }
     }
     pub fn stop(&mut self) -> Result<()> {
-        self.activator.stop()
+        if let Some(ref mut activator) = self.activator {
+            activator.stop()?;
+            self.activator = None; // drop activator, we'll make a new one if we start again.
+            Ok(())
+        } else {
+            Ok(())
+        }
     }
 
     pub fn zombify(self) -> Dynamod {
         // Drop the activator and put a ZombieActivator instead
 
         let zm = Dynamod {
-            activator: Box::new(NoopActivator),
+            activator: None,
             ..self
         };
         zm

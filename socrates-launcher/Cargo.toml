@@ -15,3 +15,5 @@ edition = "2018"
 
 [dependencies]
 socrates = { path = "../socrates", version = "0.0.1" }
+env_logger = "0.5.13"
+
