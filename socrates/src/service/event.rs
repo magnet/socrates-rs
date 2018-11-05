@@ -15,24 +15,26 @@ pub enum ServiceEvent {
 
 pub struct ServiceEventListenerGuard {
     listener_id: ListenerId,
-    svc_registry: Arc<Mutex<ServiceRegistry>>,
+    svc_manager: Weak<ServiceManager>,
 }
 
 impl ServiceEventListenerGuard {
     pub fn new(
         listener_id: ListenerId,
-        svc_registry: Arc<Mutex<ServiceRegistry>>,
+        svc_manager: Weak<ServiceManager>,
     ) -> ServiceEventListenerGuard {
         ServiceEventListenerGuard {
             listener_id,
-            svc_registry,
+            svc_manager,
         }
     }
 }
 
 impl Drop for ServiceEventListenerGuard {
     fn drop(&mut self) {
-        let mut reg = self.svc_registry.lock();
-        reg.listeners_mut().remove_listener(self.listener_id);
+        if let Some(svc_manager) = self.svc_manager.upgrade() {
+            let mut listeners = svc_manager.listeners.write();
+            listeners.remove_listener(self.listener_id);
+        }
     }
 }

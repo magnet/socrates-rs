@@ -5,7 +5,7 @@ pub mod component;
 pub mod module;
 pub mod service;
 
-pub type Result<T> = std::io::Result<T>;
+pub type Result<T> = std::result::Result<T, String>;
 
 #[cfg(test)]
 mod tests {

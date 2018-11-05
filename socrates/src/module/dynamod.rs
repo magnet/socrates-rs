@@ -4,14 +4,14 @@ pub struct Dynamod {
     pub id: DynamodId,
     pub path: String,
     activator: Box<dyn Activator>,
-    svc_registry: Arc<Mutex<ServiceRegistry>>,
+    svc_manager: Weak<ServiceManager>,
     _lib: DynamodLib, // must be last to be dropped last
 }
 
 impl Dynamod {
     pub fn new(
         id: DynamodId,
-        svc_registry: Arc<Mutex<ServiceRegistry>>,
+        svc_manager: Weak<ServiceManager>,
         path: &str,
         _lib: libloading::Library,
         activator: Box<dyn Activator>,
@@ -20,14 +20,14 @@ impl Dynamod {
             id,
             path: path.to_owned(),
             activator,
-            svc_registry,
+            svc_manager,
             _lib: DynamodLib::new(id, _lib),
         }
     }
 
     pub fn start(&mut self) -> Result<()> {
         self.activator
-            .start(Context::new(self.id, Arc::clone(&self.svc_registry)))
+            .start(Context::new(self.id, Weak::clone(&self.svc_manager)))
     }
     pub fn stop(&mut self) -> Result<()> {
         self.activator.stop()

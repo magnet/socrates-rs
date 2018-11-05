@@ -1,33 +1,14 @@
 use hashbrown::HashMap;
 use std::rc::Rc;
-use std::sync::Arc;
 
 use super::*;
-
-#[derive(Default)]
-pub struct ServiceListeners {
-    curr_id: ListenerId,
-    by_id: HashMap<ListenerId, Box<dyn ServiceEventListener>>,
-}
-impl ServiceListeners {
-    pub fn insert_listener(&mut self, listener: Box<dyn ServiceEventListener>) -> ListenerId {
-        let new_id = self.curr_id + 1;
-        self.by_id.insert(new_id, listener);
-        self.curr_id = new_id;
-        new_id
-    }
-
-    pub fn remove_listener(&mut self, id: ListenerId) {
-        self.by_id.remove(&id);
-    }
-}
 
 pub struct RegisteredService {
     core_props: ServiceCoreProps,
     name: Rc<str>,
     owner_id: DynamodId,
     used_by_count: HashMap<DynamodId, u32>,
-    service_object: Arc<dyn Service>,
+    service_object: Arc<dyn Service>, // the "master" strong ref
 }
 impl From<&RegisteredService> for ServiceRef {
     fn from(rs: &RegisteredService) -> ServiceRef {
@@ -45,7 +26,6 @@ pub struct ServiceRegistry {
     curr_id: ServiceId,
     by_id: HashMap<ServiceId, RegisteredService>,
     by_name: HashMap<Rc<str>, BTreeSet<ServiceCoreProps>>,
-    listeners: ServiceListeners,
 }
 
 // Safe because Rc is never leaked outside.
@@ -64,21 +44,13 @@ impl ServiceRegistry {
             .expect("unsynced registry!")
     }
 
-    pub fn listeners(&mut self) -> &ServiceListeners {
-        &self.listeners
-    }
-
-    pub fn listeners_mut(&mut self) -> &mut ServiceListeners {
-        &mut self.listeners
-    }
-
     pub fn register_service(
         &mut self,
         svc_name: &str,
         service_object: Arc<dyn Service>,
         svc_ranking: ServiceRanking,
         owner_id: DynamodId,
-    ) -> ServiceId {
+    ) -> ServiceRef {
         let new_id = self.curr_id + 1;
 
         let service = RegisteredService {
@@ -98,23 +70,19 @@ impl ServiceRegistry {
         svcs_using_name.insert(service_props);
         self.curr_id = new_id;
 
-        // TODO async dispatch?
-        for (_, listener) in self.listeners.by_id.iter() {
-            listener.on_service_event(ServiceEvent::ServiceRegistered(
-                self.make_service_ref(new_id),
-            ));
-        }
-
-        new_id
+        self.make_service_ref(new_id)
     }
 
-    pub fn unregister_service(&mut self, svc_id: ServiceId) {
+    pub fn unregister_service(&mut self, svc_id: ServiceId) -> Option<ServiceRef> {
         if let Some(rs) = self.by_id.remove(&svc_id) {
             self.by_name.remove(&rs.name).expect("unsynced registry!");
-            // TODO async dispatch?
-            for (_, listener) in self.listeners.by_id.iter() {
-                listener.on_service_event(ServiceEvent::ServiceUnregistered((&rs).into()));
-            }
+
+            // TODO
+            // check reference count etc. + move rs to zombie_services !
+
+            Some((&rs).into())
+        } else {
+            None
         }
     }
 
@@ -131,11 +99,15 @@ impl ServiceRegistry {
             .map(|_| self.make_service_ref(svc_id))
     }
 
-    pub fn get_service_object(&mut self, svc_id: ServiceId, requestor: DynamodId) -> Option<Arc<dyn Service>> {
+    pub fn get_service_object(
+        &mut self,
+        svc_id: ServiceId,
+        requestor: DynamodId,
+    ) -> Option<Weak<dyn Service>> {
         self.by_id.get_mut(&svc_id).map(|rs| {
             let cr = rs.used_by_count.entry(requestor).or_insert(0);
             *cr = *cr + 1;
-            Arc::clone(&rs.service_object)
+            Arc::downgrade(&rs.service_object)
         })
     }
 

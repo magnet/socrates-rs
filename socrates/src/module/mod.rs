@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Weak};
 use parking_lot::Mutex;
 
 mod activator;

@@ -37,7 +37,7 @@ impl MyActivator {
 impl Activator for MyActivator {
     fn start(&mut self, ctx: Context) -> Result<()> {
         println!("I'm started (plugin)");
-        let srv = Arc::new(MyFooFighter { x: Mutex::new(0) });
+        let srv = Box::new(MyFooFighter { x: Mutex::new(0) });
         let srv_reg = ctx.register_service_typed::<FooFighter>(srv)?;
         let mut self_reg = self.foo_fighter_reg.lock();
         *self_reg = Some(srv_reg);

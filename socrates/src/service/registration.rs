@@ -1,25 +1,23 @@
 use super::*;
 
 pub struct ServiceRegistration {
-    pub service_ref: ServiceRef,
-    svc_registry: Arc<Mutex<ServiceRegistry>>,
+    pub svc_ref: ServiceRef,
+    svc_manager: Weak<ServiceManager>,
 }
 
 impl ServiceRegistration {
-    pub fn new(
-        service_ref: ServiceRef,
-        svc_registry: Arc<Mutex<ServiceRegistry>>,
-    ) -> ServiceRegistration {
+    pub fn new(svc_ref: ServiceRef, svc_manager: Weak<ServiceManager>) -> ServiceRegistration {
         ServiceRegistration {
-            service_ref,
-            svc_registry,
+            svc_ref,
+            svc_manager,
         }
     }
 }
 
 impl Drop for ServiceRegistration {
     fn drop(&mut self) {
-        let mut reg = self.svc_registry.lock();
-        reg.unregister_service(self.service_ref.core.id);
+        if let Some(svc_manager) = self.svc_manager.upgrade() {            
+            svc_manager.unregister_service(self.svc_ref.core.id);
+        }
     }
 }
