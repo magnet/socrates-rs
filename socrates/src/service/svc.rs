@@ -5,7 +5,7 @@ pub struct Svc<T: ?Sized> {
     service: Option<Arc<T>>,
     svc_registry: Option<Arc<Mutex<ServiceRegistry>>>,
     service_id: ServiceId,
-    user_id: DynamodId,
+    user_id: DynamodId,    
 }
 
 impl<T: ?Sized> Svc<T> {

@@ -34,13 +34,6 @@ impl Container {
         let dyn_mod = mods.remove(idx as usize);
 
         {
-            let mut reg = self.svc_registry.lock();
-
-            // remove services owned by self from registry
-            reg.remove_owned(dyn_mod.id);
-        }
-
-        {
             let mut zombie_mods = self.zombie_modules.lock();
             let zm = dyn_mod.zombify();
 
@@ -50,14 +43,14 @@ impl Container {
     }
 
     pub fn start(&self, idx: DynamodId) -> Result<()> {
-        let mods_ptr = self.modules.lock();
-        let md = mods_ptr.get(idx as usize).unwrap();
+        let mut mods_ptr = self.modules.lock();
+        let md = mods_ptr.get_mut(idx as usize).unwrap();
         md.start()
     }
 
     pub fn stop(&self, idx: DynamodId) -> Result<()> {
-        let mods_ptr = self.modules.lock();
-        let md = mods_ptr.get(idx as usize).unwrap();
+        let mut mods_ptr = self.modules.lock();
+        let md = mods_ptr.get_mut(idx as usize).unwrap();
         md.stop()
     }
 

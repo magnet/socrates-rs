@@ -6,7 +6,7 @@ pub trait ServiceEventListener: Send + Sync {
     fn on_service_event(&self, event: ServiceEvent);
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ServiceEvent {
     ServiceRegistered(ServiceRef),
     ServiceModified(ServiceRef),

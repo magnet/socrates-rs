@@ -2,10 +2,10 @@ use super::*;
 
 pub struct NoopActivator;
 impl Activator for NoopActivator {
-    fn start(&self, _ctx: Context) -> Result<()> {
+    fn start(&mut self, _ctx: Context) -> Result<()> {
         Ok(())
     }
-    fn stop(&self) -> Result<()> {
+    fn stop(&mut self) -> Result<()> {
         Ok(())
     }
 }

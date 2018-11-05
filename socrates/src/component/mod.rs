@@ -1,14 +1,21 @@
-//use super::module::*;
+use super::module::*;
 use super::service::*;
 
 mod definition;
 
 pub use self::definition::ComponentDefinition;
 
+trait Component {
+}
+
 struct ComponentData {
     references: std::collections::HashMap<String, Svc<dyn Service>>,
     // config: String // TODO JSon
 }
+
+struct ComponentRunner {
+
+} 
 
 #[cfg(test)]
 mod tests {
@@ -56,6 +63,26 @@ mod tests {
         }
     }
 
+    use hashbrown::HashMap;
+    struct ComponentController {
+        context: Context,
+        definition: ComponentDefinition,
+        data: ComponentData,
+        dynamid_id: DynamodId,
+        required_services: HashMap<String, Option<ServiceId>>,
+        instances: Vec<ComponentInstance> // rather a forall construct
+    }
+    impl ComponentController {
+        pub fn init (&mut self) {
+            // ServiceTracker.
+            // context.register_listener()
+        }
+    }
+
+    struct ComponentInstance {
+
+    }
+
     #[test]
     fn test_foo() {
         let formal_greeter_def = ComponentDefinition {
@@ -74,6 +101,8 @@ mod tests {
             }],
             ..Default::default()
         };
+
+
 
         println!("{:?}", formal_greeter_def);
         println!("{:?}", greet_printer_def);

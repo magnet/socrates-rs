@@ -25,11 +25,11 @@ impl Dynamod {
         }
     }
 
-    pub fn start(&self) -> Result<()> {
+    pub fn start(&mut self) -> Result<()> {
         self.activator
             .start(Context::new(self.id, Arc::clone(&self.svc_registry)))
     }
-    pub fn stop(&self) -> Result<()> {
+    pub fn stop(&mut self) -> Result<()> {
         self.activator.stop()
     }
 

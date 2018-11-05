@@ -35,7 +35,7 @@ impl MyActivator {
 }
 
 impl Activator for MyActivator {
-    fn start(&self, ctx: Context) -> Result<()> {
+    fn start(&mut self, ctx: Context) -> Result<()> {
         println!("I'm started (plugin)");
         let srv = Arc::new(MyFooFighter { x: Mutex::new(0) });
         let srv_reg = ctx.register_service_typed::<FooFighter>(srv)?;
@@ -44,7 +44,7 @@ impl Activator for MyActivator {
         Ok(())
     }
 
-    fn stop(&self) -> Result<()> {
+    fn stop(&mut self) -> Result<()> {
         println!("I'm stopped (plugin)");
         Ok(())
     }

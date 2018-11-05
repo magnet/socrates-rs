@@ -25,13 +25,20 @@ impl Context {
     pub fn register_service(
         &self,
         svc_name: &str,
+        svc_ranking: ServiceRanking,
         svc: Arc<dyn Service>,
     ) -> Result<ServiceRegistration> {
         let mut reg = self.svc_registry.lock();
-        let service_id = reg.register_service(svc_name, svc, self.dynamod_id);
+        let service_id = reg.register_service(svc_name, svc, 0, self.dynamod_id);
 
         let srv_reg = ServiceRegistration::new(
-            ServiceRegistry::make_service_ref(service_id),
+            ServiceRef {
+                core: ServiceCoreProps {
+                    id: service_id,
+                    ranking: svc_ranking,
+                },
+                name: svc_name.to_owned(),
+            },
             Arc::clone(&self.svc_registry),
         );
 
@@ -49,16 +56,16 @@ impl Context {
     }
 
     pub fn get_service(&self, svc_id: ServiceId) -> Option<Svc<dyn Service>> {
-        let reg = self.svc_registry.lock();
-        reg.get_service_object(svc_id)
+        let mut reg = self.svc_registry.lock();
+        reg.get_service_object(svc_id, self.dynamod_id)
             .map(|x| Svc::new(x, svc_id, self.dynamod_id, Arc::clone(&self.svc_registry)))
     }
 
     pub fn get_service_by_name(&self, svc_name: &str) -> Option<Svc<dyn Service>> {
-        let reg = self.svc_registry.lock();
+        let mut reg = self.svc_registry.lock();
 
         reg.get_service_id(svc_name).and_then(|svc_id| {
-            reg.get_service_object(svc_id)
+            reg.get_service_object(svc_id, self.dynamod_id)
                 .map(|x| Svc::new(x, svc_id, self.dynamod_id, Arc::clone(&self.svc_registry)))
         })
     }
@@ -68,7 +75,7 @@ impl Context {
         svc: Arc<dyn Service>,
     ) -> Result<ServiceRegistration> {
         let srv_name = Context::get_trait_name::<T>();
-        self.register_service(&srv_name, svc)
+        self.register_service(&srv_name, Default::default(), svc)
     }
 
     pub fn get_service_typed<T: std::any::Any + ?Sized>(&self) -> Option<Svc<T>> {

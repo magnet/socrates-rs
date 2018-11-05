@@ -1,6 +1,6 @@
 use super::*;
 
-pub trait Activator: Send + Sync {
-    fn start(&self, ctx: Context) -> Result<()>;
-    fn stop(&self) -> Result<()>;
+pub trait Activator: Send  {
+    fn start(&mut self, ctx: Context) -> Result<()>;
+    fn stop(&mut self) -> Result<()>;
 }

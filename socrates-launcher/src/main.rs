@@ -17,8 +17,10 @@ fn main() {
 
     dmc.install("examples/target/debug/libexampleprovider.so")
         .expect("couldn't install provider");
-    dmc.install("examples/target/debug/libexampleconsumer.so")
+   dmc.install("examples/target/debug/libexampleconsumer.so")
         .expect("couldn't install consumer");
+
+ 
 
     dmc.print_installed_modules();
     dmc.start(0).expect("couldn't start provider");
