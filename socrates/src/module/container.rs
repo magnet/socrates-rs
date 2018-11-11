@@ -16,18 +16,12 @@ impl Container {
         Arc::downgrade(&self.svc_manager)
     }
 
-    pub fn install(&self, path: &str) -> std::io::Result<()> {
+    pub fn install(&self, path: &str) -> Result<()> {
         let mut mods = self.modules.lock();
         let id = (*mods).len() as u32;
         let lib = libloading::Library::new(path)?;
-        let acti;
-        unsafe {
-            let acti_ctor: libloading::Symbol<extern "C" fn() -> Box<dyn Activator>> =
-                lib.get(b"create_activator")?;
-            acti = acti_ctor();
-        }
 
-        let dyn_mod = Dynamod::new(id, self.shared_service_manager(), path, lib, acti);
+        let dyn_mod = Dynamod::new(id, self.shared_service_manager(), path, lib);
         mods.push(dyn_mod);
 
         Ok(())

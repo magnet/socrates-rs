@@ -28,11 +28,12 @@ impl Svc<dyn Service> {
     pub fn cast<U: Service + ?Sized>(mut self) -> std::result::Result<Svc<U>, Self> {
         let weak_srv = std::mem::replace(&mut self.service, None);
         // the Arc reference is strongly held by the framework and cannot be none.
-        let srv = weak_srv.as_ref().unwrap().upgrade().unwrap();
-        let r = Service::query_arc::<U>(srv);
-
-        match r {
-            Ok(srv) => {
+        match weak_srv
+            .as_ref()
+            .and_then(|x| x.upgrade())
+            .and_then(|srv| Service::query_arc::<U>(srv).ok())
+        {
+            Some(srv) => {
                 // note, transmute Svc<dyn Service> -> Svc<U> is not allowed
                 // because rustc doesn't know they have the same size.
 
@@ -46,7 +47,7 @@ impl Svc<dyn Service> {
                 std::mem::forget(self); // don't run destructor on our useless old self.
                 Ok(new_self)
             }
-            Err(_) => {
+            None => {
                 std::mem::replace(&mut self.service, weak_srv);
                 Err(self)
             }

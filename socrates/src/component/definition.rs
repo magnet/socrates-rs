@@ -1,17 +1,17 @@
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct ComponentDefinition {
     pub name: String,
-    pub provided_services: Vec<ProvidedService>,
-    pub required_services: Vec<RequiredService>,
+    pub provides: Vec<Provide>,
+    pub references: Vec<Reference>
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-pub struct ProvidedService {
+pub struct Provide {
     pub name: String
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-pub struct RequiredService {
+pub struct Reference {
     pub name: String,
     pub cardinality: Cardinality,
     pub policy: Policy,

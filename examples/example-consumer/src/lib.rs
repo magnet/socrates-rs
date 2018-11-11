@@ -1,5 +1,7 @@
-extern crate socrates;
+#[macro_use]
+extern crate socrates_macro;
 
+use socrates::component::Component;
 use socrates::module::{Activator, Context};
 use socrates::service::Svc;
 use socrates::Result;
@@ -7,59 +9,53 @@ use socrates::Result;
 use example_api::greet::{GreetRequest, Greeter, Idiom};
 
 #[no_mangle]
-pub fn create_activator() -> Box<dyn Activator> {
-    Box::new(MyActivator::new())
+fn activate(ctx: Context) -> Result<Box<dyn Activator>> {
+    println!("I'm started (consumer)");
+
+    // srv: Svc<dyn Greeter>, our only way to use the service
+    // it cannot be cloned, you must move it or request another
+    // instance from the framework!
+    if let Some(srv) = ctx.get_service_typed::<Greeter>() {
+        let c = MyConsumer::new(ctx, srv);
+
+        // let cm: MyConsumer = Component::instantiate();
+
+        println!("Got service");
+
+        let req = GreetRequest {
+            who: "world".into(),
+            idiom: Idiom::Slang,
+        };
+
+        let result = c.do_it(&req);
+
+        println!("got {}", result);
+
+        Ok(Box::new(MyActivator::new(c)))
+    } else {
+        println!("No service found! Maybe it's coming later... components will make that easy :-)");
+        Err("Required service missing!".into())
+    }
 }
 
-#[derive(Default)]
 pub struct MyActivator {
-    consumer: Option<MyConsumer>,
+    _consumer: MyConsumer,
 }
 
 impl MyActivator {
-    pub fn new() -> MyActivator {
-        Default::default()
+    pub fn new(_consumer: MyConsumer) -> MyActivator {
+        MyActivator { _consumer }
     }
 }
-
-impl Activator for MyActivator {
-    fn start(&mut self, ctx: Context) -> Result<()> {
-        println!("I'm started (consumer)");
-
-        // srv: Svc<dyn Greeter>, our only way to use the service
-        // it cannot be cloned, you must move it or request another
-        // instance from the framework!
-        if let Some(srv) = ctx.get_service_typed::<Greeter>() {
-            let c = MyConsumer::new(ctx, srv);
-
-            println!("Got service");
-
-            let req = GreetRequest {
-                who: "world".into(),
-                idiom: Idiom::Slang,
-            };
-
-            let result = c.do_it(&req);
-
-            println!("got {}", result);
-
-            self.consumer = Some(c);
-        } else {
-            println!(
-                "No service found! Maybe it's coming later... components will make that easy :-)"
-            );
-        }
-        Ok(())
-    }
-
-    fn stop(&mut self) -> Result<()> {
+impl Activator for MyActivator {}
+impl Drop for MyActivator {
+    fn drop(&mut self) {
         println!("I'm stopped (consumer)");
-
-        Ok(())
     }
 }
 
-struct MyConsumer {
+#[derive(Component)]
+pub struct MyConsumer {
     _ctx: Context,
     greeter: Svc<dyn Greeter>,
 }

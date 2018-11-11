@@ -16,6 +16,8 @@ edition = "2018"
 synom = "0.11"
 syn = {version= "0.15.17", features = ["full"] }
 quote = "0.6.9"
+socrates = { path = "../socrates", version = "0.0.1" }
+
 
 [lib]
 proc-macro = true

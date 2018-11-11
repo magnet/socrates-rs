@@ -4,16 +4,44 @@
 use super::module::*;
 use super::service::*;
 
-mod definition;
+pub mod definition;
 
-pub use self::definition::ComponentDefinition;
 
-trait Component {}
+pub use self::definition::*;
+
+pub trait Component {
+    fn get_definition() -> ComponentDefinition;
+    fn instantiate() -> Self;
+}
 
 struct ComponentData {
     references: std::collections::HashMap<String, Svc<dyn Service>>,
     // config: String // TODO JSon
 }
+
+// struct ComponentBuilder {
+
+// }
+
+// impl ComponentBuilder {
+
+//     fn run(ctx: &Context) {
+
+//     }
+
+//     fn test(es: &EventStream) {
+
+//         es.on_service_event(|e| if e is an event w)
+
+//         ComponentBuilder.with_config::<MyConf>("my_conf")
+//                         .require::<Greeter>("greeter")
+//                         .require::<I18n>("i18n")
+//                         .provide::<MyTrait>()
+//                         .
+
+//     }
+
+// }
 
 struct ComponentRunner {}
 
@@ -48,6 +76,7 @@ mod tests {
 
     query_interface::interfaces!(FormalGreeter: Greeter);
 
+    // #[derive(Component)]    
     struct GreetPrinter {
         greeter: Svc<dyn Greeter>,
     }
@@ -89,7 +118,7 @@ mod tests {
     fn test_foo() {
         let formal_greeter_def = ComponentDefinition {
             name: "FormalGreeter".into(),
-            provided_services: vec![ProvidedService {
+            provides: vec![Provide {
                 name: "Greeter".into(),
             }],
             ..Default::default()
@@ -97,7 +126,7 @@ mod tests {
 
         let greet_printer_def = ComponentDefinition {
             name: "GreetPrinter".into(),
-            required_services: vec![RequiredService {
+            references: vec![Reference {
                 name: "Greeter".into(),
                 ..Default::default()
             }],

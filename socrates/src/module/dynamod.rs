@@ -5,7 +5,7 @@ pub struct Dynamod {
     pub path: String,
     activator: Option<Box<dyn Activator>>,
     svc_manager: Weak<ServiceManager>,
-    _lib: DynamodLib, // must be last to be dropped last
+    lib: DynamodLib, // must be last to be dropped last
 }
 
 impl Dynamod {
@@ -13,33 +13,30 @@ impl Dynamod {
         id: DynamodId,
         svc_manager: Weak<ServiceManager>,
         path: &str,
-        _lib: libloading::Library,
-        activator: Box<dyn Activator>,
+        lib: libloading::Library,
     ) -> Dynamod {
         Dynamod {
             id,
             path: path.to_owned(),
-            activator: Some(activator),
+            activator: None,
             svc_manager,
-            _lib: DynamodLib::new(id, _lib),
+            lib: DynamodLib::new(id, lib),
         }
     }
 
+    fn activate(&self, ctx: Context) -> Result<Box<Activator>> {
+        let activate_fn: libloading::Symbol<ActivateFn> = unsafe { self.lib.lib.get(b"activate")? };
+        activate_fn(ctx)
+    }
+
     pub fn start(&mut self) -> Result<()> {
-        if let Some(ref mut activator) = self.activator {
-            activator.start(Context::new(self.id, Weak::clone(&self.svc_manager)))
-        } else {
-            Ok(())
-        }
+        self.activator =
+            Some(self.activate(Context::new(self.id, Weak::clone(&self.svc_manager)))?);
+        Ok(())
     }
     pub fn stop(&mut self) -> Result<()> {
-        if let Some(ref mut activator) = self.activator {
-            activator.stop()?;
-            self.activator = None; // drop activator, we'll make a new one if we start again.
-            Ok(())
-        } else {
-            Ok(())
-        }
+        self.activator = None; // drop activated, we'll make a new one if we start again.
+        Ok(())
     }
 
     pub fn zombify(self) -> Dynamod {
@@ -55,11 +52,11 @@ impl Dynamod {
 
 struct DynamodLib {
     id: DynamodId,
-    _lib: libloading::Library, // must be last to be dropped last
+    lib: libloading::Library, // must be last to be dropped last
 }
 impl DynamodLib {
-    pub fn new(id: DynamodId, _lib: libloading::Library) -> DynamodLib {
-        DynamodLib { id, _lib }
+    pub fn new(id: DynamodId, lib: libloading::Library) -> DynamodLib {
+        DynamodLib { id, lib }
     }
 }
 impl Drop for DynamodLib {

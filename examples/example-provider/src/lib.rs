@@ -2,43 +2,43 @@
 extern crate socrates_macro;
 
 use socrates::module::{Activator, Context};
-use socrates::service::{Service, ServiceRegistration};
+use socrates::service::ServiceRegistration;
+use socrates::component::Component;
 use socrates::Result;
 
+
 #[no_mangle]
-pub fn create_activator() -> Box<dyn Activator> {
-    Box::new(SimpleActivator::new())
+fn activate(ctx: Context) -> Result<Box<Activator>> {
+    println!("I'm started (provider)");
+    let srv = Box::new(SimpleGreeter::new());
+    let srv_reg = ctx.register_service_typed::<Greeter>(srv)?;
+    Ok(Box::new(SimpleActivator::new(srv_reg)))
 }
 
 use example_api::greet::{GreetRequest, Greeter, Idiom};
 
-#[derive(Default)]
 pub struct SimpleActivator {
-    registered_srv: Option<ServiceRegistration>,
+    _registered_srv: ServiceRegistration,
 }
 
 impl SimpleActivator {
-    fn new() -> SimpleActivator {
-        Default::default()
+    fn new(_registered_srv: ServiceRegistration) -> SimpleActivator {
+        SimpleActivator { _registered_srv }
     }
 }
 
-impl Activator for SimpleActivator {
-    fn start(&mut self, ctx: Context) -> Result<()> {
-        println!("I'm started (provider)");
-        let srv = Box::new(SimpleGreeter::new());
-        let srv_reg = ctx.register_service_typed::<Greeter>(srv)?;
-        self.registered_srv = Some(srv_reg);
-        Ok(())
-    }
+impl Activator for SimpleActivator {}
 
-    fn stop(&mut self) -> Result<()> {
+impl Drop for SimpleActivator {
+    fn drop(&mut self) {
         println!("I'm stopped (provider)");
-        Ok(())
     }
 }
 
-#[component(services: Greeter)]
+
+
+#[derive(Component)]
+#[provide(Greeter)]
 struct SimpleGreeter;
 
 impl SimpleGreeter {

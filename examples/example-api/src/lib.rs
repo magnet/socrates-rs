@@ -19,28 +19,3 @@ pub mod greet {
     }
 
 }
-
-#[cfg(test)]
-mod tests {
-
-    use super::greet::{GreetRequest, Greeter, Idiom};
-
-    struct MyGreeter;
-
-    impl Greeter for MyGreeter {
-        fn greet(&self, req: &GreetRequest) -> String {
-            format!("Hello {}", req.who).into()
-        }
-    }
-
-    #[test]
-    fn test_foo() {
-        let mg = MyGreeter;
-        let req = GreetRequest {
-            who: "world".into(),
-            idiom: Idiom::Regular,
-        };
-
-        assert_eq!(mg.greet(&req), "Hello world");
-    }
-}
