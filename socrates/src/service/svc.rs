@@ -1,6 +1,6 @@
 use super::*;
 
-pub struct Svc<T: Service + ?Sized> {
+pub struct Svc<T: Service + ?Sized = dyn Service> {
     // Options are implementation details -- must be built with values
     service: Option<Weak<T>>,
     svc_manager: Weak<ServiceManager>,
@@ -25,8 +25,8 @@ impl<T: Service + ?Sized> Svc<T> {
 }
 
 impl Svc<dyn Service> {
-    pub fn cast<U: Service + ?Sized>(mut self) -> std::result::Result<Svc<U>, Self> {
-        let weak_srv = std::mem::replace(&mut self.service, None);
+    pub fn cast<U: Service + ?Sized>(mut self_: Self) -> std::result::Result<Svc<U>, Self> {
+        let weak_srv = std::mem::replace(&mut self_.service, None);
         // the Arc reference is strongly held by the framework and cannot be none.
         match weak_srv
             .as_ref()
@@ -37,19 +37,19 @@ impl Svc<dyn Service> {
                 // note, transmute Svc<dyn Service> -> Svc<U> is not allowed
                 // because rustc doesn't know they have the same size.
 
-                let mgr = std::mem::replace(&mut self.svc_manager, Weak::new());
+                let mgr = std::mem::replace(&mut self_.svc_manager, Weak::new());
                 let new_self = Svc {
                     service: Some(Arc::downgrade(&srv)),
-                    service_id: self.service_id,
-                    user_id: self.user_id,
+                    service_id: self_.service_id,
+                    user_id: self_.user_id,
                     svc_manager: mgr,
                 };
-                std::mem::forget(self); // don't run destructor on our useless old self.
+                std::mem::forget(self_); // don't run destructor on our useless old self.
                 Ok(new_self)
             }
             None => {
-                std::mem::replace(&mut self.service, weak_srv);
-                Err(self)
+                std::mem::replace(&mut self_.service, weak_srv);
+                Err(self_)
             }
         }
     }

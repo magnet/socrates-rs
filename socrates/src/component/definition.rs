@@ -1,18 +1,27 @@
+use super::super::service::query::ServiceQuery;
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct ComponentDefinition {
     pub name: String,
     pub provides: Vec<Provide>,
-    pub references: Vec<Reference>
+    pub references: Vec<Reference>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct Provide {
-    pub name: String
+    pub name: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Reference {
+    pub name: String,
+    pub svc_name: String, // This is just for human-readability
+    pub svc_query: ServiceQuery,
+    pub options: ReferenceOptions,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-pub struct Reference {
-    pub name: String,
+pub struct ReferenceOptions {
     pub cardinality: Cardinality,
     pub policy: Policy,
     pub policy_option: PolicyOption,
@@ -53,4 +62,3 @@ impl Default for PolicyOption {
         PolicyOption::Greedy
     }
 }
-

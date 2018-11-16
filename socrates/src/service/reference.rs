@@ -13,4 +13,6 @@ pub struct ServiceCoreProps {
 pub struct ServiceRef {
     pub core: ServiceCoreProps,
     pub name: String,
+    pub type_id: TypeId,
+    pub owner_id: DynamodId,
 }

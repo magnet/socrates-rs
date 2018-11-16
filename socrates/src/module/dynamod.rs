@@ -26,7 +26,11 @@ impl Dynamod {
 
     fn activate(&self, ctx: Context) -> Result<Box<Activator>> {
         let activate_fn: libloading::Symbol<ActivateFn> = unsafe { self.lib.lib.get(b"activate")? };
-        activate_fn(ctx)
+
+        // Somehow a panic in activate leads to a segfault after full unwinding.
+        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| activate_fn(ctx)))
+            .map_err(|_| "Panic in Activate".to_owned().into())
+            .and_then(|r| r)
     }
 
     pub fn start(&mut self) -> Result<()> {

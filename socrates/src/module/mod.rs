@@ -1,5 +1,7 @@
+use super::common::*;
 use super::service::*;
 use parking_lot::Mutex;
+use std::any::TypeId;
 use std::sync::{Arc, Weak};
 
 mod activator;
@@ -9,8 +11,8 @@ mod dynamod;
 
 pub use super::Result;
 pub type DynamodId = u32;
-pub use self::activator::Activator;
 pub use self::activator::ActivateFn;
+pub use self::activator::Activator;
 pub use self::container::Container;
 pub use self::context::Context;
 pub use self::dynamod::Dynamod;

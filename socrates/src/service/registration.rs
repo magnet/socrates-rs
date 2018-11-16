@@ -16,7 +16,7 @@ impl ServiceRegistration {
 
 impl Drop for ServiceRegistration {
     fn drop(&mut self) {
-         if let Some(svc_manager) = self.svc_manager.upgrade() {
+        if let Some(svc_manager) = self.svc_manager.upgrade() {
             svc_manager.unregister_service(self.svc_ref.core.id);
         }
     }

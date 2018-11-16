@@ -59,17 +59,12 @@ impl Container {
         }
     }
 
-    pub fn register_listener(
+    pub fn register_listener<T: EventListener<ServiceEvent> + 'static>(
         &mut self,
-        listener: Box<dyn ServiceEventListener>,
-    ) -> Result<ServiceEventListenerGuard> {
-        let mut listeners = self.svc_manager.listeners.write();
+        listener: Listener<T, ServiceEvent>,
+    ) -> Result<Listener<T, ServiceEvent>> {
+        self.svc_manager.register_listener(listener.weaken());
 
-        let listener_id = listeners.insert_listener(listener);
-
-        Ok(ServiceEventListenerGuard::new(
-            listener_id,
-            self.shared_service_manager(),
-        ))
+        Ok(listener)
     }
 }

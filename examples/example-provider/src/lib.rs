@@ -1,15 +1,19 @@
 #[macro_use]
 extern crate socrates_macro;
 
+use socrates::component::*;
 use socrates::module::{Activator, Context};
 use socrates::service::ServiceRegistration;
-use socrates::component::Component;
 use socrates::Result;
-
 
 #[no_mangle]
 fn activate(ctx: Context) -> Result<Box<Activator>> {
     println!("I'm started (provider)");
+    println!(
+        "My Component def: {:?}",
+        <SimpleGreeter as Component>::get_definition()
+    );
+
     let srv = Box::new(SimpleGreeter::new());
     let srv_reg = ctx.register_service_typed::<Greeter>(srv)?;
     Ok(Box::new(SimpleActivator::new(srv_reg)))
@@ -34,8 +38,6 @@ impl Drop for SimpleActivator {
         println!("I'm stopped (provider)");
     }
 }
-
-
 
 #[derive(Component)]
 #[provide(Greeter)]

@@ -2,70 +2,85 @@
 // Playground for better service queries (filters), service tracking and multi-service tracking
 use super::*;
 
-pub enum ServiceQuery {
-    Id(ServiceId),
+#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Hash)]
+pub enum ServiceQuery<T: Service + ?Sized = dyn Service> {
+    ServiceId(ServiceId),
     Name(String),
+    TypeId(TypeQuery<T>), // TODO add combinators And, Or, Not and property matchers.
 }
 
-use hashbrown::HashMap;
-pub struct SvcTracker<'a> {
-    context: &'a Context,
-    svcs: Arc<HashMap<String, Mutex<Option<ServiceRef>>>>,
-    _listener_guard: Option<ServiceEventListenerGuard>,
-}
-
-impl<'a> SvcTracker<'a> {
-    pub fn new(context: &'a Context, queries: Vec<String>) -> SvcTracker<'a> {
-        let mut svcs = HashMap::new();
-        for s in queries {
-            svcs.insert(s, Mutex::new(None::<ServiceRef>));
-        }
-        let svcs = Arc::new(svcs);
-        SvcTracker {
-            context,
-            svcs,
-            _listener_guard: None,
+// Must be implemented manually to ignore the fact that !(T: Clone)
+impl<T: Service + ?Sized> Clone for ServiceQuery<T> {
+    fn clone(&self) -> ServiceQuery<T> {
+        match self {
+            ServiceQuery::ServiceId(id) => ServiceQuery::ServiceId(*id),
+            ServiceQuery::Name(s) => ServiceQuery::Name(s.clone()),
+            ServiceQuery::TypeId(tq) => ServiceQuery::TypeId(tq.clone()),
         }
     }
+}
 
-    pub fn activate(&mut self) -> Result<()> {
-        self._listener_guard = Some(self.context.register_listener(Box::new(
-            SvcTrackerListener {
-                svcs: Arc::clone(&self.svcs),
-            },
-        ))?);
-        for (ref name, ref mutex) in self.svcs.iter() {
-            let mut v = mutex.lock();
-            *v = self
-                .context
-                .get_service_id(name)
-                .and_then(|id| self.context.get_service_ref(id));
+#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Hash)]
+pub struct TypeQuery<T: Service + ?Sized = dyn Service> {
+    pub type_id: TypeId,
+    _phantom: std::marker::PhantomData<T>,
+}
+
+// Must be implemented manually to ignore the fact that !(T: Clone)
+impl<T: Service + ?Sized> Clone for TypeQuery<T> {
+    fn clone(&self) -> TypeQuery<T> {
+        TypeQuery {
+            type_id: self.type_id,
+            _phantom: std::marker::PhantomData,
         }
-        Ok(())
     }
 }
 
-struct SvcTrackerListener {
-    svcs: Arc<HashMap<String, Mutex<Option<ServiceRef>>>>,
-}
-impl ServiceEventListener for SvcTrackerListener {
-    fn on_service_event(&self, event: ServiceEvent) {
-        match event {
-            ServiceEvent::ServiceRegistered(svc_ref) | ServiceEvent::ServiceModified(svc_ref) => {
-                if let Some(mutex) = self.svcs.get(&svc_ref.name) {
-                    println!("Matching event {:?}", &svc_ref);
-                    let mut v = mutex.lock();
-                    *v = Some(svc_ref)
-                }
-            }
-            ServiceEvent::ServiceUnregistered(svc_ref) => {
-                if let Some(mutex) = self.svcs.get(&svc_ref.name) {
-                    println!("Matching event {:?}", &svc_ref);
+impl<T: Service + ?Sized> TypeQuery<T> {
+    #[inline(always)]
+    pub fn raw(type_id: TypeId) -> TypeQuery<dyn Service> {
+        TypeQuery {
+            type_id,
+            _phantom: std::marker::PhantomData,
+        }
+    }
 
-                    let mut v = mutex.lock();
-                    *v = None
-                }
-            }
+    #[inline(always)]
+    pub fn by_type<U: Service + ?Sized>() -> TypeQuery<U> {
+        TypeQuery {
+            type_id: Service::type_id::<U>(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+}
+
+impl ServiceQuery {
+    #[inline(always)]
+    pub fn by_service_id(id: ServiceId) -> ServiceQuery {
+        ServiceQuery::ServiceId(id)
+    }
+
+    #[inline(always)]
+    pub fn by_name(s: String) -> ServiceQuery {
+        ServiceQuery::Name(s)
+    }
+
+    #[inline(always)]
+    pub fn by_type_id(s: TypeId) -> ServiceQuery {
+        let tq: TypeQuery = <TypeQuery<dyn Service>>::raw(s);
+        ServiceQuery::TypeId(tq)
+    }
+
+    #[inline(always)]
+    pub fn by_type<T: Service + ?Sized>() -> ServiceQuery<T> {
+        ServiceQuery::TypeId(<TypeQuery<T>>::by_type::<T>())
+    }
+
+    pub fn matches(&self, e: &ServiceRef) -> bool {
+        match self {
+            ServiceQuery::ServiceId(id) => e.core.id == *id,
+            ServiceQuery::Name(s) => e.name == *s,
+            ServiceQuery::TypeId(tq) => e.type_id == tq.type_id,
         }
     }
 }

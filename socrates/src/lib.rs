@@ -2,6 +2,7 @@
 #[macro_use]
 extern crate query_interface;
 
+pub mod common;
 pub mod component;
 pub mod module;
 pub mod service;
@@ -12,13 +13,11 @@ pub enum Error {
     IoError(std::io::Error),
 }
 
-
 impl From<&str> for Error {
     fn from(error: &str) -> Self {
         Error::StrError(error.into())
     }
 }
-
 
 impl From<String> for Error {
     fn from(error: String) -> Self {

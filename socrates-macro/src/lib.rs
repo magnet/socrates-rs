@@ -18,7 +18,15 @@ use proc_macro::TokenStream;
 
 use socrates::component::*;
 
-#[proc_macro_derive(Component, attributes(provide))]
+struct ReferenceInfo {
+    pub name: String,
+    pub unqualified_svc_name: String,
+    pub cardinality: Cardinality,
+    pub policy: Policy,
+    pub policy_option: PolicyOption,
+}
+
+#[proc_macro_derive(Component, attributes(provide, custom_lifecycle))]
 pub fn component(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -42,8 +50,15 @@ pub fn component(input: TokenStream) -> TokenStream {
                                                     "contents {:?}",
                                                     trt_seg.ident.to_string()
                                                 );
-                                                references.push(Reference {
-                                                    name: trt_seg.ident.to_string(),
+                                                references.push(ReferenceInfo {
+                                                    name: f
+                                                        .ident
+                                                        .as_ref()
+                                                        .map(|x| x.to_string())
+                                                        .unwrap_or_else(|| {
+                                                            trt_seg.ident.to_string()
+                                                        }),
+                                                    unqualified_svc_name: trt_seg.ident.to_string(),
                                                     cardinality: Cardinality::Mandatory,
                                                     policy: Policy::Static,
                                                     policy_option: PolicyOption::Greedy,
@@ -69,19 +84,30 @@ pub fn component(input: TokenStream) -> TokenStream {
     // Find services defined with #[provide(DynServiceTrait1, DynServiceTrait2)]
     let mut provides = Vec::new(); // for ComponentDefinition
     let mut provided = Vec::new(); // layout for query_interface macro.
+    let mut implement_lifecycle = true;
     for attr in attrs.iter() {
         if let Ok(meta) = attr.parse_meta() {
-            if let syn::Meta::List(l) = meta {
-                if l.ident.to_string() == "provide" {
-                    for nested in l.nested.iter() {
-                        if let syn::NestedMeta::Meta(syn::Meta::Word(svc_name)) = nested {
-                            provides.push(Provide {
-                                name: svc_name.to_string(),
-                            });
-                            provided.push(svc_name.clone());
+            match meta {
+                syn::Meta::List(l) => {
+                    let ident = l.ident.to_string();
+                    if ident == "provide" {
+                        for nested in l.nested.iter() {
+                            if let syn::NestedMeta::Meta(syn::Meta::Word(svc_name)) = nested {
+                                provides.push(Provide {
+                                    name: svc_name.to_string(),
+                                });
+                                provided.push(svc_name.clone());
+                            }
                         }
                     }
                 }
+                syn::Meta::Word(ident) => {
+                    let ident = ident.to_string();
+                    if ident == "custom_lifecycle" {
+                        implement_lifecycle = false;
+                    }
+                }
+                _ => (),
             }
         }
     }
@@ -89,20 +115,12 @@ pub fn component(input: TokenStream) -> TokenStream {
     let struct_name = &input.ident;
     let struct_name_as_string = struct_name.to_string();
 
-    // Used for debug!
-    let component_def = ComponentDefinition {
-        name: struct_name.to_string(),
-        provides: provides.clone(),
-        references: references.clone(),
-    };
-    println!("{:?}", component_def);
-
     let mut quoted_provides = Vec::new();
     for prov in provided.iter() {
-        let prov_name = prov.to_string();
+        let prov_name = syn::parse_str::<syn::Expr>(&prov.to_string()).ok();;
         quoted_provides.push(quote! {
             socrates::component::definition::Provide {
-                name: #prov_name.to_string(),
+                name: socrates::service::Service::get_name::<#prov_name>().to_string(),
             }
         });
     }
@@ -110,6 +128,8 @@ pub fn component(input: TokenStream) -> TokenStream {
     let mut quoted_references = Vec::new();
     for rfe in references.iter() {
         let rfe_name = rfe.name.to_string();
+        let rfe_svc_name = syn::parse_str::<syn::Expr>(&rfe.unqualified_svc_name.to_string()).ok();
+
         let card = syn::parse_str::<syn::Path>(&format!(
             "socrates::component::definition::Cardinality::{:?}",
             rfe.cardinality
@@ -123,13 +143,18 @@ pub fn component(input: TokenStream) -> TokenStream {
         let pol_opt = syn::parse_str::<syn::Path>(&format!(
             "socrates::component::definition::PolicyOption::{:?}",
             rfe.policy_option
-        )).ok();
+        ))
+        .ok();
         quoted_references.push(quote! {
             socrates::component::definition::Reference {
                 name: #rfe_name.to_string(),
-                cardinality: #card,
-                policy: #pol,
-                policy_option: #pol_opt
+                svc_name: socrates::service::Service::get_name::<#rfe_svc_name>().into(),                                
+                svc_query: socrates::service::query::ServiceQuery::by_type_id(socrates::service::Service::type_id::<#rfe_svc_name>()),
+                options: socrates::component::definition::ReferenceOptions {
+                    cardinality: #card,
+                    policy: #pol,
+                    policy_option: #pol_opt
+                }
             }
         });
     }
@@ -148,10 +173,19 @@ pub fn component(input: TokenStream) -> TokenStream {
         })
     };
 
+    let lifecycle_trait = if implement_lifecycle {
+        Some(quote!{
+            impl socrates::component::Lifecycle for #struct_name {
+
+            }
+        })
+    } else {
+        None
+    };
+
     let expanded = quote! {
         #service_trait
-
-        impl Component for #struct_name {
+        impl socrates::component::Component for #struct_name {
             fn get_definition() -> socrates::component::ComponentDefinition {
                 socrates::component::ComponentDefinition {
                     name: #struct_name_as_string.to_string(),
@@ -161,9 +195,12 @@ pub fn component(input: TokenStream) -> TokenStream {
             }
 
             fn instantiate() -> #struct_name {
-                unimplemented!();
+                println!("Instanciating me, #struct_name, unimplemented!");
+                unimplemented!()
             }
         }
+
+        #lifecycle_trait
     };
 
     let r: TokenStream = expanded.into();

@@ -1,11 +1,10 @@
 use super::*;
 
+#[derive(Clone)]
 pub struct Context {
     dynamod_id: DynamodId,
     svc_manager: Weak<ServiceManager>,
 }
-
-use std::intrinsics::type_name;
 
 impl Context {
     pub fn new(dynamod_id: DynamodId, svc_manager: Weak<ServiceManager>) -> Context {
@@ -25,22 +24,22 @@ impl Context {
         self.svc_manager.upgrade()
     }
 
-    pub fn register_listener(
+    pub fn register_listener<T: EventListener<ServiceEvent> + 'static>(
         &self,
-        listener: Box<dyn ServiceEventListener>,
-    ) -> Result<ServiceEventListenerGuard> {
+        listener: Listener<T, ServiceEvent>,
+    ) -> Result<Listener<T, ServiceEvent>> {
         let svc_manager = self.use_manager_or_fail()?;
 
-        let listener_id = svc_manager.register_listener(listener);
+        svc_manager.register_listener(listener.weaken());
 
-        Ok(ServiceEventListenerGuard::new(
-            listener_id,
-            self.shared_service_manager(),
-        ))
+        Ok(listener)
     }
+
+    // Register service
 
     pub fn register_service(
         &self,
+        type_id: std::any::TypeId,
         svc_name: &str,
         svc_ranking: ServiceRanking,
         svc: Box<dyn Service>,
@@ -48,26 +47,21 @@ impl Context {
         let svc_manager = self.use_manager_or_fail()?;
 
         let service_ref =
-            svc_manager.register_service(svc_name, svc_ranking, self.dynamod_id, svc)?;
+            svc_manager.register_service(type_id, svc_name, svc_ranking, self.dynamod_id, svc)?;
 
         let srv_reg = ServiceRegistration::new(service_ref, self.shared_service_manager());
 
         Ok(srv_reg)
     }
 
-    pub fn get_service_id(&self, svc_name: &str) -> Option<ServiceId> {
-        let svc_manager = self.use_manager_or_none()?;
-
-        svc_manager.get_service_id(svc_name)
-    }
-
+    // Get by service_id
     pub fn get_service_ref(&self, svc_id: ServiceId) -> Option<ServiceRef> {
         let svc_manager = self.use_manager_or_none()?;
 
         svc_manager.get_service_ref(svc_id)
     }
 
-    pub fn get_service(&self, svc_id: ServiceId) -> Option<Svc<dyn Service>> {
+    pub fn get_service(&self, svc_id: ServiceId) -> Option<Svc> {
         let svc_manager = self.use_manager_or_none()?;
 
         svc_manager
@@ -75,7 +69,43 @@ impl Context {
             .map(|x| Svc::new(x, svc_id, self.dynamod_id, self.shared_service_manager()))
     }
 
-    pub fn get_service_by_name(&self, svc_name: &str) -> Option<Svc<dyn Service>> {
+    // Get by type_id
+
+    pub fn get_service_id_by_type_id(&self, svc_type_id: TypeId) -> Option<ServiceId> {
+        let svc_manager = self.use_manager_or_none()?;
+
+        svc_manager.get_service_id_by_type_id(svc_type_id)
+    }
+
+    pub fn get_service_ref_by_type_id(&self, svc_type_id: TypeId) -> Option<ServiceRef> {
+        let svc_manager = self.use_manager_or_none()?;
+
+        svc_manager.get_service_ref_by_type_id(svc_type_id)
+    }
+
+    pub fn get_service_by_type_id(&self, svc_type_id: TypeId) -> Option<Svc> {
+        let svc_manager = self.use_manager_or_none()?;
+
+        svc_manager
+            .get_service_by_type_id(svc_type_id, self.dynamod_id)
+            .map(|x| Svc::new(x.1, x.0, self.dynamod_id, self.shared_service_manager()))
+    }
+
+    // Get by name
+
+    pub fn get_service_id_by_name(&self, svc_name: &str) -> Option<ServiceId> {
+        let svc_manager = self.use_manager_or_none()?;
+
+        svc_manager.get_service_id_by_name(svc_name)
+    }
+
+    pub fn get_service_ref_by_name(&self, svc_name: &str) -> Option<ServiceRef> {
+        let svc_manager = self.use_manager_or_none()?;
+
+        svc_manager.get_service_ref_by_name(svc_name)
+    }
+
+    pub fn get_service_by_name(&self, svc_name: &str) -> Option<Svc> {
         let svc_manager = self.use_manager_or_none()?;
 
         svc_manager
@@ -89,18 +119,58 @@ impl Context {
         &self,
         svc: Box<dyn Service>,
     ) -> Result<ServiceRegistration> {
-        let srv_name = Context::get_trait_name::<T>();
-        self.register_service(&srv_name, Default::default(), svc)
+        let svc_type_id = Service::type_id::<T>();
+        let svc_name = Service::get_name::<T>();
+        self.register_service(svc_type_id, &svc_name, Default::default(), svc)
     }
 
     pub fn get_service_typed<T: Service + ?Sized>(&self) -> Option<Svc<T>> {
-        let srv_name = Context::get_trait_name::<T>();
-        self.get_service_by_name(&srv_name)
-            .and_then(|svc| svc.cast::<T>().ok())
+        let svc_type_id = Service::type_id::<T>();
+        self.get_service_by_type_id(svc_type_id)
+            .and_then(|svc| Svc::cast::<T>(svc).ok())
     }
 
-    fn get_trait_name<T: ?Sized>() -> &'static str {
-        unsafe { type_name::<T>() }
+    pub fn get_service_by_name_typed<T: Service + ?Sized>(&self, svc_name: &str) -> Option<Svc<T>> {
+        let svc_type_id = Service::type_id::<T>();
+        self.get_service_by_name(svc_name)
+            .and_then(|svc| Svc::cast::<T>(svc).ok())
+    }
+
+    pub fn get_service_by_id_typed<T: Service + ?Sized>(
+        &self,
+        svc_id: ServiceId,
+    ) -> Option<Svc<T>> {
+        self.get_service(svc_id)
+            .and_then(|svc| Svc::cast::<T>(svc).ok())
+    }
+    pub fn get_service_by_type_id_typed<T: Service + ?Sized>(
+        &self,
+        svc_type_id: TypeId,
+    ) -> Option<Svc<T>> {
+        self.get_service_by_type_id(svc_type_id)
+            .and_then(|svc| Svc::cast::<T>(svc).ok())
+    }
+
+    pub fn get_service_by_query<T: Service + ?Sized>(
+        &self,
+        query: &ServiceQuery<T>,
+    ) -> Option<Svc<T>> {
+        match query {
+            ServiceQuery::ServiceId(id) => self.get_service_by_id_typed(*id),
+            ServiceQuery::Name(s) => self.get_service_by_name_typed(&s),
+            ServiceQuery::TypeId(tid) => self.get_service_by_type_id_typed(tid.type_id),
+        }
+    }
+
+    pub fn get_service_ref_by_query<T: Service + ?Sized>(
+        &self,
+        query: &ServiceQuery<T>,
+    ) -> Option<ServiceRef> {
+        match query {
+            ServiceQuery::ServiceId(id) => self.get_service_ref(*id),
+            ServiceQuery::Name(s) => self.get_service_ref_by_name(&s),
+            ServiceQuery::TypeId(tid) => self.get_service_ref_by_type_id(tid.type_id),
+        }
     }
 
     #[inline]
