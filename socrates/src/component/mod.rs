@@ -159,7 +159,7 @@ impl<T: Component> ComponentController<T> {
         self.track_change(|references| {
             let mut changed = false;
             for ref rfe in self.definition.references.iter() {
-                if let Some(service_ref) = context.get_service_ref_by_query(&rfe.svc_query) {
+                for service_ref in context.get_all_services_ref_by_query(&rfe.svc_query) {
                     changed = true;
                     let entry = references
                         .inner
@@ -237,7 +237,7 @@ impl<T: Component> ComponentController<T> {
     fn update(&self) {}
 
     fn instantiate(&self) {
-        //  let component = (self.instantiate)();
+        //let component = (self.instantiate)();
     }
 
     fn print_status(&self) {

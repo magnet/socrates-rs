@@ -56,61 +56,73 @@ impl ServiceManager {
         reg.get_service_ref(svc_id)
     }
 
+    #[inline(always)]
     pub fn get_service_object(
         &self,
         svc_id: ServiceId,
         user_id: DynamodId,
     ) -> Option<Weak<dyn Service>> {
-        let mut reg = self.registry.write();
-        reg.get_service_object(svc_id, user_id)
+        self.registry.write().get_service_object(svc_id, user_id)
     }
 
     // By TypeId
-    pub fn get_service_id_by_type_id(&self, svc_type_id: TypeId) -> Option<ServiceId> {
-        let reg = self.registry.read();
-        reg.get_service_id_by_type_id(svc_type_id)
-    }
-    pub fn get_service_ref_by_type_id(&self, svc_type_id: TypeId) -> Option<ServiceRef> {
-        let reg = self.registry.read();
-        reg.get_service_id_by_type_id(svc_type_id)
-            .and_then(|svc_id| reg.get_service_ref(svc_id))
+    pub fn get_services_id_by_type_id(
+        &self,
+        svc_type_id: TypeId,
+    ) -> impl Iterator<Item = ServiceId> {
+        self.registry.read().get_services_id_by_type_id(svc_type_id)
     }
 
-    pub fn get_service_by_type_id(
+    pub fn get_services_ref_by_type_id(
+        &self,
+        svc_type_id: TypeId,
+    ) -> impl Iterator<Item = ServiceRef> + '_ {
+        self.registry
+            .read()
+            .get_services_id_by_type_id(svc_type_id)
+            .flat_map(move |svc_id| self.registry.read().get_service_ref(svc_id))
+    }
+
+    pub fn get_services_by_type_id(
         &self,
         svc_type_id: TypeId,
         user_id: DynamodId,
-    ) -> Option<(ServiceId, Weak<dyn Service>)> {
-        let mut reg = self.registry.write();
-
-        reg.get_service_id_by_type_id(svc_type_id).and_then(|svc_id| {
-            reg.get_service_object(svc_id, user_id)
-                .map(|svc_obj| (svc_id, svc_obj))
-        })
+    ) -> impl Iterator<Item = (ServiceId, Weak<dyn Service>)> + '_ {
+        self.registry
+            .read()
+            .get_services_id_by_type_id(svc_type_id)
+            .flat_map(move |svc_id| {
+                self.get_service_object(svc_id, user_id)
+                    .map(|svc_obj| (svc_id, svc_obj))
+            })
     }
 
     // By Name
-    pub fn get_service_id_by_name(&self, svc_name: &str) -> Option<ServiceId> {
-        let reg = self.registry.read();
-        reg.get_service_id_by_name(svc_name)
+    pub fn get_services_id_by_name(&self, svc_name: &str) -> impl Iterator<Item = ServiceId> {
+        self.registry.read().get_services_id_by_name(svc_name)
     }
-    pub fn get_service_ref_by_name(&self, svc_name: &str) -> Option<ServiceRef> {
-        let reg = self.registry.read();
-        reg.get_service_id_by_name(svc_name)
-            .and_then(|svc_id| reg.get_service_ref(svc_id))
+    pub fn get_services_ref_by_name(
+        &self,
+        svc_name: &str,
+    ) -> impl Iterator<Item = ServiceRef> + '_ {
+        self.registry
+            .read()
+            .get_services_id_by_name(svc_name)
+            .flat_map(move |svc_id| self.registry.read().get_service_ref(svc_id))
     }
 
-    pub fn get_service_by_name(
+    pub fn get_services_by_name(
         &self,
         svc_name: &str,
         user_id: DynamodId,
-    ) -> Option<(ServiceId, Weak<dyn Service>)> {
-        let mut reg = self.registry.write();
-
-        reg.get_service_id_by_name(svc_name).and_then(|svc_id| {
-            reg.get_service_object(svc_id, user_id)
-                .map(|svc_obj| (svc_id, svc_obj))
-        })
+    ) -> impl Iterator<Item = (ServiceId, Weak<dyn Service>)> + '_ {
+        self.registry
+            .read()
+            .get_services_id_by_name(svc_name)
+            .flat_map(move |svc_id| {
+                self.get_service_object(svc_id, user_id)
+                    .map(|svc_obj| (svc_id, svc_obj))
+            })
     }
 
     pub fn remove_use(&self, svc_id: ServiceId, user_id: DynamodId) {

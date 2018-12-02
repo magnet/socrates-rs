@@ -28,14 +28,14 @@ impl From<&RegisteredService> for ServiceRef {
     }
 }
 
-use std::collections::BTreeSet;
+use im::OrdSet;
 
 #[derive(Default)]
 pub struct ServiceRegistry {
     curr_id: ServiceId,
     by_service_id: HashMap<ServiceId, RegisteredService>,
-    by_name: HashMap<Arc<str>, BTreeSet<ServiceCoreProps>>,
-    by_type_id: HashMap<TypeId, BTreeSet<ServiceCoreProps>>,
+    by_name: HashMap<Arc<str>, OrdSet<ServiceCoreProps>>,
+    by_type_id: HashMap<TypeId, OrdSet<ServiceCoreProps>>,
     zombies: HashMap<ServiceId, RegisteredService>,
 }
 
@@ -69,13 +69,10 @@ impl ServiceRegistry {
         let service_ref = service.make_service_ref();
 
         let svc_name = Arc::clone(&service.name);
-        let svcs_using_name = self.by_name.entry(svc_name).or_insert(BTreeSet::new());
+        let svcs_using_name = self.by_name.entry(svc_name).or_insert(OrdSet::new());
         svcs_using_name.insert(service.core_props.clone());
 
-        let svcs_using_type_id = self
-            .by_type_id
-            .entry(svc_type_id)
-            .or_insert(BTreeSet::new());
+        let svcs_using_type_id = self.by_type_id.entry(svc_type_id).or_insert(OrdSet::new());
         svcs_using_type_id.insert(service.core_props.clone());
 
         self.by_service_id.insert(new_id, service);
@@ -109,18 +106,26 @@ impl ServiceRegistry {
         }
     }
 
-    pub fn get_service_id_by_name(&self, svc_name: &str) -> Option<ServiceId> {
-        self.by_name
-            .get(svc_name)
-            .and_then(|cps| cps.iter().next())
-            .map(|cp| cp.id)
+    #[inline(always)]
+    fn get_services_id(
+        core_props: Option<&OrdSet<ServiceCoreProps>>,
+    ) -> impl Iterator<Item = ServiceId> {
+        core_props
+            .cloned() // clone the im::OrdSet within the Option
+            .into_iter() // make the Option into an iterator
+            .flat_map(OrdSet::into_iter) // flat_map with the OrdSet as an iterator
+            .map(|cp| cp.id) // return only the service id.
     }
 
-    pub fn get_service_id_by_type_id(&self, svc_type_id: TypeId) -> Option<ServiceId> {
-        self.by_type_id
-            .get(&svc_type_id)
-            .and_then(|cps| cps.iter().next())
-            .map(|cp| cp.id)
+    pub fn get_services_id_by_name(&self, svc_name: &str) -> impl Iterator<Item = ServiceId> {
+        ServiceRegistry::get_services_id(self.by_name.get(svc_name))
+    }
+
+    pub fn get_services_id_by_type_id(
+        &self,
+        svc_type_id: TypeId,
+    ) -> impl Iterator<Item = ServiceId> {
+        ServiceRegistry::get_services_id(self.by_type_id.get(&svc_type_id))
     }
 
     pub fn get_service_ref(&self, svc_id: ServiceId) -> Option<ServiceRef> {
