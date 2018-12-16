@@ -13,3 +13,4 @@ crate-type = ["dylib"]
 example-api = { path = "../example-api", version = "0.1.0" }
 socrates-macro = { path = "../../socrates-macro", version = "0.0.1" }
 socrates = { path = "../../socrates", version = "0.0.1" }
+parking_lot = "0.7.0"

@@ -65,17 +65,21 @@ impl Drop for MyActivator {
     }
 }
 
-#[derive(Component)]
-#[custom_lifecycle]
+//#[derive(Component)]
+//#[custom_lifecycle]
 pub struct MyConsumer {
     _ctx: Context,
     greeter: Svc<dyn Greeter>,
+    maybe_greeter: Option<Svc<dyn Greeter>>,
+    greeters: Vec<Svc<dyn Greeter>>,
+    // dyn_greeter: parking_lot::Mutex<Svc<dyn Greeter>>,
+
 }
 
 impl MyConsumer {
-    pub fn new(_ctx: Context, greeter: Svc<dyn Greeter>) -> MyConsumer {
-        MyConsumer { _ctx, greeter }
-    }
+    // pub fn new(_ctx: Context, greeter: Svc<dyn Greeter>) -> MyConsumer {
+    //     MyConsumer { _ctx, greeter }
+    // }
     pub fn do_it(&self, req: &GreetRequest) -> String {
         self.greeter.greet(req)
     }
@@ -84,5 +88,51 @@ impl MyConsumer {
 impl Lifecycle for MyConsumer {
     fn on_start(&self) {
         println!("I'm started!");
+    }
+}
+
+impl Drop for MyConsumer {
+    fn drop(&mut self) {
+        println!("Dropping MyConsumer!");
+    }
+}
+
+use socrates::component::connectors::*;
+
+impl socrates::component::Component for MyConsumer {
+    fn get_definition() -> socrates::component::ComponentDefinition {
+        socrates::component::ComponentDefinition {
+            name: "MyConsumer".to_string(),
+            provides: vec![],
+            references: vec![socrates::component::definition::Reference {
+                name: "greeter".to_string(),
+                svc_name: socrates::service::Service::get_name::<Greeter>().into(),
+                svc_query: socrates::service::query::ServiceQuery::by_type_id(
+                    socrates::service::Service::type_id::<Greeter>(),
+                ),
+                options: socrates::component::definition::ReferenceOptions {
+                    cardinality: socrates::component::definition::Cardinality::Mandatory,
+                    policy: socrates::component::definition::Policy::Static,
+                    policy_option: socrates::component::definition::PolicyOption::Greedy,
+                },
+            }],
+        }
+    }
+    fn instantiate(
+        ctx: socrates::module::Context,
+        references: &socrates::component::ComponentReferences,
+    ) -> Option<MyConsumer> {
+        println!("Instanciating me, {}", "MyConsumer");
+        let greeter = Connector::make(&ctx)?;
+        let maybe_greeter = Connector::make(&ctx)?;
+        let greeters = Connector::make(&ctx)?;
+        // let dyn_greeter = Connector::make(&ctx)?;
+        Some(MyConsumer {
+            _ctx: ctx,
+            greeter,
+            maybe_greeter,
+            greeters,
+            // dyn_greeter
+        })
     }
 }

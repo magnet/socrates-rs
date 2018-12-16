@@ -39,8 +39,8 @@ impl Drop for SimpleActivator {
     }
 }
 
-#[derive(Component)]
-#[provide(Greeter)]
+//#[derive(Component)]
+//#[provide(Greeter)]
 struct SimpleGreeter;
 
 impl SimpleGreeter {
@@ -59,3 +59,28 @@ impl Greeter for SimpleGreeter {
         format!("{} {}", gr, req.who).into()
     }
 }
+
+use socrates::service::Service;
+impl Service for SimpleGreeter {}
+#[macro_use]
+extern crate query_interface;
+interfaces!(SimpleGreeter: Greeter);
+impl socrates::component::Component for SimpleGreeter {
+    fn get_definition() -> socrates::component::ComponentDefinition {
+        socrates::component::ComponentDefinition {
+            name: "SimpleGreeter".to_string(),
+            provides: vec![socrates::component::definition::Provide {
+                name: socrates::service::Service::get_name::<Greeter>().to_string(),
+            }],
+            references: vec![],
+        }
+    }
+    fn instantiate(
+        ctx: socrates::module::Context,
+        references: &socrates::component::ComponentReferences,
+    ) -> Option<SimpleGreeter> {
+        println!("Instanciating me, {}", "SimpleGreeter");
+        Some(SimpleGreeter)
+    }
+}
+impl socrates::component::Lifecycle for SimpleGreeter {}

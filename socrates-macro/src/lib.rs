@@ -183,6 +183,7 @@ pub fn component(input: TokenStream) -> TokenStream {
         None
     };
 
+    
     let expanded = quote! {
         #service_trait
         impl socrates::component::Component for #struct_name {
@@ -194,9 +195,9 @@ pub fn component(input: TokenStream) -> TokenStream {
                 }
             }
 
-            fn instantiate() -> #struct_name {
-                println!("Instanciating me, #struct_name, unimplemented!");
-                unimplemented!()
+            fn instantiate(ctx: socrates::module::Context, references: &socrates::component::ComponentReferences) -> #struct_name {
+                println!("Instanciating me, {}, unimplemented!", #struct_name_as_string);
+                unimplemented!();
             }
         }
 

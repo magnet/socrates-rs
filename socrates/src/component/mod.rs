@@ -5,14 +5,15 @@ use super::common::*;
 use super::module::*;
 use super::service::*;
 
+pub mod connectors;
 pub mod definition;
 
 pub use self::definition::*;
 
 // Not a trait object
-pub trait Component: Lifecycle {
+pub trait Component: Lifecycle + Sized + Send + Sync {
     fn get_definition() -> ComponentDefinition;
-    fn instantiate() -> Self;
+    fn instantiate(context: Context, references: &ComponentReferences) -> Option<Self>;
 }
 
 pub trait Lifecycle {
@@ -28,9 +29,15 @@ pub struct ComponentManagerHandler {
 impl Activator for ComponentManagerHandler {}
 
 impl ComponentManagerHandler {
-    pub fn start(context: &Context, manager: ComponentManager) -> Result<ComponentManagerHandler> {
+    pub fn start(
+        context: &Context,
+        mut manager: ComponentManager,
+    ) -> Result<ComponentManagerHandler> {
+        manager.set_context(context);
+
         let active_manager = context.register_listener(Listener::new(manager))?;
-        active_manager.query_registry(context);
+
+        active_manager.query_registry();
 
         Ok(ComponentManagerHandler {
             manager: active_manager,
@@ -69,9 +76,15 @@ impl ComponentManager {
         }
     }
 
-    fn query_registry(&self, context: &Context) {
+    fn query_registry(&self) {
         for (_, cc) in self.components.iter() {
-            cc.query_registry(context);
+            cc.query_registry();
+        }
+    }
+
+    fn set_context(&mut self, context: &Context) {
+        for (_, cc) in self.components.iter_mut() {
+            cc.set_context(context);
         }
     }
 
@@ -94,7 +107,7 @@ use parking_lot::{Mutex, RwLock};
 use std::sync::Arc;
 
 #[derive(Clone, Debug)]
-struct ComponentReferences {
+pub struct ComponentReferences {
     inner: HashMap<Arc<str>, im::OrdSet<ServiceCoreProps>>,
 }
 impl ComponentReferences {
@@ -116,25 +129,31 @@ impl Deref for ComponentReferences {
 }
 
 pub struct ComponentController<T: Component> {
+    context: Option<Context>,
     definition: ComponentDefinition,
-    instantiate: fn() -> T,
+    instantiate: fn(Context, &ComponentReferences) -> Option<T>,
     references: RwLock<ComponentReferences>,
-    instances: Mutex<Vec<ComponentInstance>>,
+    instances: RwLock<Vec<ComponentInstance<T>>>,
 }
 
 pub trait ComponentControllerT: Send + Sync {
-    fn query_registry(&self, context: &Context);
+    fn set_context(&mut self, context: &Context);
+    fn query_registry(&self);
     fn on_service_event(&self, event: &ServiceEvent);
     fn print_status(&self);
 }
 
 impl<T: Component> ComponentController<T> {
-    pub fn new(definition: ComponentDefinition, instantiate: fn() -> T) -> ComponentController<T> {
+    pub fn new(
+        definition: ComponentDefinition,
+        instantiate: fn(Context, &ComponentReferences) -> Option<T>,
+    ) -> ComponentController<T> {
         ComponentController {
+            context: None,
             definition,
             instantiate,
             references: RwLock::new(ComponentReferences::new()),
-            instances: Mutex::new(Vec::new()),
+            instances: RwLock::new(Vec::new()),
         }
     }
 
@@ -155,7 +174,8 @@ impl<T: Component> ComponentController<T> {
         satisfied
     }
 
-    pub fn query_registry(&self, context: &Context) {
+    pub fn query_registry(&self) {
+        let context = self.context.as_ref().unwrap();
         self.track_change(|references| {
             let mut changed = false;
             for ref rfe in self.definition.references.iter() {
@@ -188,11 +208,9 @@ impl<T: Component> ComponentController<T> {
                     match event {
                         ServiceEvent::ServiceRegistered(_) => {
                             entry.insert(service_ref.core.clone().into());
-                            ()
                         }
                         ServiceEvent::ServiceUnregistered(_) => {
                             entry.remove(&service_ref.core);
-                            ()
                         }
                         ServiceEvent::ServiceModified(_) => unimplemented!(),
                     }
@@ -207,7 +225,7 @@ impl<T: Component> ComponentController<T> {
             let old_refs = self.references.read().clone();
 
             let mut references = self.references.write();
-            let was_satisfied = !self.instances.lock().is_empty();
+            let was_satisfied = !self.instances.read().is_empty();
 
             let changed = f(&mut references);
             if changed {
@@ -231,13 +249,30 @@ impl<T: Component> ComponentController<T> {
             } else if !was_satisfied {
                 self.instantiate();
             }
+        } else {
+            if was_satisfied {
+                self.drop();
+            }
         }
+    }
+
+    fn set_context(&mut self, context: &Context) {
+        self.context = Some(context.clone());
     }
 
     fn update(&self) {}
 
     fn instantiate(&self) {
-        //let component = (self.instantiate)();
+        if let Some(component) =
+            (self.instantiate)(self.context.clone().unwrap(), &self.references.read())
+        {
+            let ci = ComponentInstance::new(None, component);
+            let mut instances = self.instances.write();
+            instances.push(ci);
+        }
+    }
+    fn drop(&self) {
+        self.instances.write().clear();
     }
 
     fn print_status(&self) {
@@ -253,8 +288,12 @@ impl<T: Component> ComponentController<T> {
     }
 }
 impl<T: Component> ComponentControllerT for ComponentController<T> {
-    fn query_registry(&self, context: &Context) {
-        self.query_registry(context)
+    fn set_context(&mut self, context: &Context) {
+        self.set_context(context);
+    }
+
+    fn query_registry(&self) {
+        self.query_registry()
     }
     fn on_service_event(&self, event: &ServiceEvent) {
         self.on_service_event(event)
@@ -265,14 +304,17 @@ impl<T: Component> ComponentControllerT for ComponentController<T> {
     }
 }
 
-pub struct ComponentInstance {
-    registration: ServiceRegistration,
-    //object: Svc<dyn Service>,
+pub struct ComponentInstance<T: Component> {
+    registration: Option<ServiceRegistration>,
+    component: T, //object: Svc<dyn Service>
 }
 
-impl ComponentInstance {
-    fn new(registration: ServiceRegistration) -> ComponentInstance {
-        ComponentInstance { registration }
+impl<T: Component> ComponentInstance<T> {
+    fn new(registration: Option<ServiceRegistration>, component: T) -> ComponentInstance<T> {
+        ComponentInstance {
+            registration,
+            component,
+        }
     }
 }
 

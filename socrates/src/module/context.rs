@@ -55,7 +55,6 @@ impl Context {
         Ok(srv_reg)
     }
 
-
     pub fn register_service_typed<T: Service + ?Sized>(
         &self,
         svc: Box<dyn Service>,
@@ -64,8 +63,6 @@ impl Context {
         let svc_name = Service::get_name::<T>();
         self.register_service(svc_type_id, &svc_name, Default::default(), svc)
     }
-
-    
 
     // Get by service_id
     pub fn get_service_ref(&self, svc_id: ServiceId) -> Option<ServiceRef> {
@@ -83,6 +80,19 @@ impl Context {
     }
 
     // Get by type_id
+
+    // pub fn iter_services_id_by_type_id(
+    //     &self,
+    //     svc_type_id: TypeId,
+    // ) -> impl Iterator<Item = ServiceId> {
+    //     if let Some(svc_manager) = self.try_manager() {
+    //         svc_manager
+    //             .get_services_id_by_type_id(svc_type_id)
+    //             .chain(std::iter::empty::<ServiceId>())
+    //     } else {
+    //         std::iter::empty::<ServiceId>()
+    //     }
+    // }
 
     pub fn get_first_service_id_by_type_id(&self, svc_type_id: TypeId) -> Option<ServiceId> {
         if let Some(svc_manager) = self.try_manager() {
@@ -212,7 +222,6 @@ impl Context {
     }
 
     // Typed methods.
-
 
     pub fn get_service_by_id_typed<T: Service + ?Sized>(
         &self,

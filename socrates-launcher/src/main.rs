@@ -12,6 +12,7 @@ impl EventListener<ServiceEvent> for MyListener {
 }
 
 fn main() -> Result<()> {
+
     env_logger::init();
 
     println!("True knowledge exists in knowing that you know nothing.");
@@ -29,7 +30,12 @@ fn main() -> Result<()> {
 
     dmc.start(0).expect("couldn't start provider");
 
+    // a restart!
     dmc.stop(0).expect("couldn't stop provider");
+    dmc.start(0).expect("couldn't start provider");
+
+    dmc.stop(0).expect("couldn't stop provider");
+
     dmc.stop(1).expect("couldn't stop provider");
 
     dmc.uninstall(0).expect("couldn't uninstall provider");

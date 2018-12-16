@@ -14,9 +14,9 @@ impl ServiceManager {
     }
 
     pub fn unregister_service(&self, svc_id: ServiceId) {
-        let mut reg = self.registry.write();
+        let mb_ref = self.registry.write().unregister_service(svc_id);
 
-        if let Some(service_ref) = reg.unregister_service(svc_id) {
+        if let Some(service_ref) = mb_ref {
             self.fire_event(&ServiceEvent::ServiceUnregistered(service_ref.clone()));
         }
     }
@@ -31,10 +31,13 @@ impl ServiceManager {
         owner_id: DynamodId,
         svc: Box<dyn Service>,
     ) -> Result<ServiceRef> {
-        let service_ref = {
-            let mut reg = self.registry.write();
-            reg.register_service(svc_type_id, svc_name, svc.into(), svc_ranking, owner_id)
-        };
+        let service_ref = self.registry.write().register_service(
+            svc_type_id,
+            svc_name,
+            svc.into(),
+            svc_ranking,
+            owner_id,
+        );
 
         self.fire_event(&ServiceEvent::ServiceRegistered(service_ref.clone()));
 
@@ -52,8 +55,7 @@ impl ServiceManager {
     // By ServiceId
 
     pub fn get_service_ref(&self, svc_id: ServiceId) -> Option<ServiceRef> {
-        let reg = self.registry.read();
-        reg.get_service_ref(svc_id)
+        self.registry.read().get_service_ref(svc_id)
     }
 
     #[inline(always)]
@@ -126,9 +128,7 @@ impl ServiceManager {
     }
 
     pub fn remove_use(&self, svc_id: ServiceId, user_id: DynamodId) {
-        let mut reg = self.registry.write();
-
-        reg.remove_use(svc_id, user_id);
+        self.registry.write().remove_use(svc_id, user_id);
     }
 }
 
