@@ -214,17 +214,30 @@ pub fn component(input: TokenStream) -> TokenStream {
 pub fn service_trait(_attr: TokenStream, item: TokenStream) -> TokenStream {
   
       
-    let input : syn::ItemTrait = parse_macro_input!(item);
+    let mut input : syn::ItemTrait = parse_macro_input!(item);
+    
+    let svc_trait_path : syn::Path = syn::parse_str("socrates::service::Service").unwrap();
+    
+    let svc_trait_bound = syn::TraitBound {
+        paren_token: None,
+        modifier: syn::TraitBoundModifier::None,
+        lifetimes: None,
+        path: svc_trait_path,
+    };
 
-    let struct_name = &input.ident;
-    let struct_name_as_string = struct_name.to_string();
+    input.supertraits.push(syn::TypeParamBound::Trait(svc_trait_bound));
+
+
+    let trait_name = &input.ident;
+    let trait_name_as_string = trait_name.to_string();
 
 
     let expanded = quote! {
-        #input
-        impl socrates::service::Named for #struct_name {
+        #input 
+
+        impl socrates::service::Named for #trait_name {
             fn type_name() -> &'static str {
-                concat!(module_path!(), "::", #struct_name_as_string)
+                concat!(module_path!(), "::", #trait_name_as_string)
             }    
         }
     };

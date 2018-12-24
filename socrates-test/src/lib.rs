@@ -8,7 +8,7 @@ mod tests {
     use query_interface::*;
 
     #[service_trait]
-    pub trait Greeter : Service {
+    pub trait Greeter {
         fn greet(&self, who: &str) -> String;
     }
 

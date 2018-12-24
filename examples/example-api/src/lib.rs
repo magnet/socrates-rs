@@ -19,7 +19,7 @@ pub mod greet {
     }
 
     #[service_trait]
-    pub trait Greeter: Service {
+    pub trait Greeter {
         fn greet(&self, req: &GreetRequest) -> String;
     }
 
