@@ -15,7 +15,7 @@ edition = "2018"
 [dependencies]
 syn = {version= "0.15.17", features = ["full"] }
 quote = "0.6.9"
-socrates = { path = "../socrates", version = "0.0.1" }
+socrates-core = { path = "../socrates-core", version = "0.0.1" }
 
 
 [lib]

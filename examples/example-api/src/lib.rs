@@ -1,5 +1,9 @@
+#[macro_use]
+extern crate socrates;
+
 pub mod greet {
     use socrates::service::Service;
+    use socrates::service_trait;
 
     #[derive(Clone, Debug)]
     pub enum Idiom {
@@ -14,6 +18,7 @@ pub mod greet {
         pub idiom: Idiom,
     }
 
+    #[service_trait]
     pub trait Greeter: Service {
         fn greet(&self, req: &GreetRequest) -> String;
     }

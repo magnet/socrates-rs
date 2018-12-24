@@ -12,5 +12,10 @@ The core traits and types in for the `socrates` library.
 categories = ["config"]
 edition = "2018"
 
-
 [dependencies]
+libloading = "0.5"
+query_interface = "0.3.5"
+parking_lot = { version = "0.7.0" }
+hashbrown = "0.1.7"
+log = "0.4.6"
+im = "12.2.0"

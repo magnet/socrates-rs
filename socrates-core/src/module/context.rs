@@ -55,7 +55,7 @@ impl Context {
         Ok(srv_reg)
     }
 
-    pub fn register_service_typed<T: Service + ?Sized>(
+    pub fn register_service_typed<T: Service + Named + ?Sized>(
         &self,
         svc: Box<dyn Service>,
     ) -> Result<ServiceRegistration> {

@@ -1,9 +1,31 @@
-// Placeholder for future modularisation of the lib
+pub mod common;
+pub mod module;
+pub mod service;
+pub mod component;
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+
+#[derive(Debug)]
+pub enum Error {
+    StrError(String),
+    IoError(std::io::Error),
+}
+
+impl From<&str> for Error {
+    fn from(error: &str) -> Self {
+        Error::StrError(error.into())
     }
 }
+
+impl From<String> for Error {
+    fn from(error: String) -> Self {
+        Error::StrError(error)
+    }
+}
+
+impl From<std::io::Error> for Error {
+    fn from(error: std::io::Error) -> Self {
+        Error::IoError(error)
+    }
+}
+
+pub type Result<T> = std::result::Result<T, Error>;

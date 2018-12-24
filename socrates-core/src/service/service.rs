@@ -2,19 +2,18 @@ use query_interface::{mopo, Object};
 
 pub type ServiceId = u32;
 
+pub trait Named {
+    fn type_name() -> &'static str;
+}
+
 pub trait Service: Object + Send + Sync {}
 mopo!(Service);
 
-use std::intrinsics::type_name;
 
 impl Service {
     #[inline(always)]
-    pub fn get_name<T: ?Sized>() -> &'static str {
-        let s = unsafe { type_name::<T>() };
-        if s.starts_with("dyn ") {
-            return &s[4..];
-        }
-        s
+    pub fn get_name<T: Named + ?Sized>() -> &'static str {
+        <T>::type_name()
     }
 
     #[inline(always)]

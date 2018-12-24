@@ -15,5 +15,5 @@ edition = "2018"
 
 [dependencies]
 socrates = { path = "../socrates", version = "0.0.1" }
-env_logger = "0.5.13"
-parking_lot = { version = "0.7.0", features = ["nightly", "deadlock_detection"] }
+env_logger = "0.6.0"
+parking_lot = { version = "0.7.0" }

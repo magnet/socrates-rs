@@ -1,34 +1,26 @@
-#![feature(core_intrinsics)]
+
+
 #[macro_use]
-extern crate query_interface;
+extern crate socrates_core;
 
-pub mod common;
-pub mod component;
-pub mod module;
-pub mod service;
-
-#[derive(Debug)]
-pub enum Error {
-    StrError(String),
-    IoError(std::io::Error),
+pub use socrates_core::*;
+pub mod common {
+    pub use socrates_core::common::*;
 }
 
-impl From<&str> for Error {
-    fn from(error: &str) -> Self {
-        Error::StrError(error.into())
-    }
+pub mod module {
+    pub use socrates_core::module::*;
+}
+pub mod service {
+    pub use socrates_core::service::*;
 }
 
-impl From<String> for Error {
-    fn from(error: String) -> Self {
-        Error::StrError(error)
-    }
+
+pub mod component {
+    pub use socrates_core::component::*;
 }
 
-impl From<std::io::Error> for Error {
-    fn from(error: std::io::Error) -> Self {
-        Error::IoError(error)
-    }
-}
 
-pub type Result<T> = std::result::Result<T, Error>;
+#[macro_use]
+extern crate socrates_macro;
+pub use socrates_macro::*;

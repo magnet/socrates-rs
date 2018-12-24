@@ -1,7 +1,7 @@
 // WIP experimenting
 
-#![feature(extern_crate_item_prelude)]
-#![feature(custom_attribute)]
+//#![feature(extern_crate_item_prelude)]
+//#![feature(custom_attribute)]
 // The `quote!` macro requires deep recursion.
 #![recursion_limit = "512"]
 
@@ -16,7 +16,7 @@ use syn::DeriveInput;
 
 use proc_macro::TokenStream;
 
-use socrates::component::*;
+use socrates_core::component::*;
 
 struct ReferenceInfo {
     pub name: String,
@@ -202,6 +202,31 @@ pub fn component(input: TokenStream) -> TokenStream {
         }
 
         #lifecycle_trait
+    };
+
+    let r: TokenStream = expanded.into();
+    println!("{}", r.to_string());
+    r
+}
+
+
+#[proc_macro_attribute]
+pub fn service_trait(_attr: TokenStream, item: TokenStream) -> TokenStream {
+  
+      
+    let input : syn::ItemTrait = parse_macro_input!(item);
+
+    let struct_name = &input.ident;
+    let struct_name_as_string = struct_name.to_string();
+
+
+    let expanded = quote! {
+        #input
+        impl socrates::service::Named for #struct_name {
+            fn type_name() -> &'static str {
+                concat!(module_path!(), "::", #struct_name_as_string)
+            }    
+        }
     };
 
     let r: TokenStream = expanded.into();
