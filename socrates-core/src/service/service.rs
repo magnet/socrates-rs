@@ -9,7 +9,6 @@ pub trait Named {
 pub trait Service: Object + Send + Sync {}
 mopo!(Service);
 
-
 impl Service {
     #[inline(always)]
     pub fn get_name<T: Named + ?Sized>() -> &'static str {

@@ -148,7 +148,7 @@ pub fn component(input: TokenStream) -> TokenStream {
         quoted_references.push(quote! {
             socrates::component::definition::Reference {
                 name: #rfe_name.to_string(),
-                svc_name: socrates::service::Service::get_name::<#rfe_svc_name>().into(),                                
+                svc_name: socrates::service::Service::get_name::<#rfe_svc_name>().into(),
                 svc_query: socrates::service::query::ServiceQuery::by_type_id(socrates::service::Service::type_id::<#rfe_svc_name>()),
                 options: socrates::component::definition::ReferenceOptions {
                     cardinality: #card,
@@ -174,7 +174,7 @@ pub fn component(input: TokenStream) -> TokenStream {
     };
 
     let lifecycle_trait = if implement_lifecycle {
-        Some(quote!{
+        Some(quote! {
             impl socrates::component::Lifecycle for #struct_name {
 
             }
@@ -183,7 +183,6 @@ pub fn component(input: TokenStream) -> TokenStream {
         None
     };
 
-    
     let expanded = quote! {
         #service_trait
         impl socrates::component::Component for #struct_name {
@@ -209,15 +208,12 @@ pub fn component(input: TokenStream) -> TokenStream {
     r
 }
 
-
 #[proc_macro_attribute]
 pub fn service_trait(_attr: TokenStream, item: TokenStream) -> TokenStream {
-  
-      
-    let mut input : syn::ItemTrait = parse_macro_input!(item);
-    
-    let svc_trait_path : syn::Path = syn::parse_str("socrates::service::Service").unwrap();
-    
+    let mut input: syn::ItemTrait = parse_macro_input!(item);
+
+    let svc_trait_path: syn::Path = syn::parse_str("socrates::service::Service").unwrap();
+
     let svc_trait_bound = syn::TraitBound {
         paren_token: None,
         modifier: syn::TraitBoundModifier::None,
@@ -225,20 +221,20 @@ pub fn service_trait(_attr: TokenStream, item: TokenStream) -> TokenStream {
         path: svc_trait_path,
     };
 
-    input.supertraits.push(syn::TypeParamBound::Trait(svc_trait_bound));
-
+    input
+        .supertraits
+        .push(syn::TypeParamBound::Trait(svc_trait_bound));
 
     let trait_name = &input.ident;
     let trait_name_as_string = trait_name.to_string();
 
-
     let expanded = quote! {
-        #input 
+        #input
 
         impl socrates::service::Named for #trait_name {
             fn type_name() -> &'static str {
                 concat!(module_path!(), "::", #trait_name_as_string)
-            }    
+            }
         }
     };
 

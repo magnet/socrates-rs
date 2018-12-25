@@ -12,7 +12,6 @@ impl EventListener<ServiceEvent> for MyListener {
 }
 
 fn main() -> Result<()> {
-
     env_logger::init();
 
     println!("True knowledge exists in knowing that you know nothing.");

@@ -1,10 +1,10 @@
 #[cfg(test)]
 mod tests {
-    use socrates::service::*;
-    use socrates::component::*;
     use socrates::component::definition::*;
+    use socrates::component::*;
+    use socrates::service::*;
     use socrates::service_trait;
-    
+
     use query_interface::*;
 
     #[service_trait]

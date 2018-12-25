@@ -76,7 +76,7 @@ impl socrates::component::Component for SimpleGreeter {
         }
     }
     fn instantiate(
-        ctx: socrates::module::Context,
+        ctx: &socrates::module::Context,
         references: &socrates::component::ComponentReferences,
     ) -> Option<SimpleGreeter> {
         println!("Instanciating me, {}", "SimpleGreeter");

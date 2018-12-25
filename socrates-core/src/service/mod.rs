@@ -24,9 +24,7 @@ pub use self::reference::ServiceRanking;
 pub use self::reference::ServiceRef;
 pub use self::registration::ServiceRegistration;
 pub use self::registry::ServiceRegistry;
-pub use self::service::Service;
 pub use self::service::Named;
+pub use self::service::Service;
 pub use self::service::ServiceId;
 pub use self::svc::Svc;
-
-

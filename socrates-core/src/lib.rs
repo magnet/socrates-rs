@@ -1,8 +1,7 @@
 pub mod common;
+pub mod component;
 pub mod module;
 pub mod service;
-pub mod component;
-
 
 #[derive(Debug)]
 pub enum Error {

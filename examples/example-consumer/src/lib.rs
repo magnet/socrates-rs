@@ -65,14 +65,18 @@ impl Drop for MyActivator {
     }
 }
 
+use parking_lot::Mutex;
+
 //#[derive(Component)]
 //#[custom_lifecycle]
 pub struct MyConsumer {
-    _ctx: Context,
+    _ctx: socrates::module::Context,
     greeter: Svc<dyn Greeter>,
     maybe_greeter: Option<Svc<dyn Greeter>>,
     greeters: Vec<Svc<dyn Greeter>>,
-    // dyn_greeter: parking_lot::Mutex<Svc<dyn Greeter>>,
+    dyn_greeter: Mutex<Svc<dyn Greeter>>,
+    dyn_maybe_greeter: Mutex<Option<Svc<dyn Greeter>>>,
+    dyn_greeters: Mutex<Vec<Svc<dyn Greeter>>>,
 
 }
 
@@ -97,7 +101,6 @@ impl Drop for MyConsumer {
     }
 }
 
-use socrates::component::connectors::*;
 
 impl socrates::component::Component for MyConsumer {
     fn get_definition() -> socrates::component::ComponentDefinition {
@@ -119,20 +122,32 @@ impl socrates::component::Component for MyConsumer {
         }
     }
     fn instantiate(
-        ctx: socrates::module::Context,
+        ctx: &socrates::module::Context,
         references: &socrates::component::ComponentReferences,
     ) -> Option<MyConsumer> {
+        let ctx = &socrates::component::Context {
+            module_context: ctx.clone()
+        };
+
         println!("Instanciating me, {}", "MyConsumer");
-        let greeter = Connector::make(&ctx)?;
-        let maybe_greeter = Connector::make(&ctx)?;
-        let greeters = Connector::make(&ctx)?;
-        // let dyn_greeter = Connector::make(&ctx)?;
+        let _ctx = socrates::component::factory::build(ctx)?;
+        let greeter = socrates::component::factory::build(ctx)?;
+        let maybe_greeter = socrates::component::factory::build(ctx)?;
+        let greeters = socrates::component::factory::build(ctx)?;
+
+        let dyn_greeter = socrates::component::factory::build(ctx)?;
+        let dyn_maybe_greeter = socrates::component::factory::build(ctx)?;
+        let dyn_greeters = socrates::component::factory::build(ctx)?;
+
         Some(MyConsumer {
-            _ctx: ctx,
+            _ctx,
             greeter,
             maybe_greeter,
             greeters,
-            // dyn_greeter
+
+            dyn_greeter,
+            dyn_maybe_greeter,
+            dyn_greeters
         })
     }
 }

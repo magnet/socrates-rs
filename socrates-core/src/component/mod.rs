@@ -2,18 +2,25 @@
 // Playground for service components
 
 use super::common::*;
+use super::module::Context as ModuleContext;
 use super::module::*;
 use super::service::*;
+pub mod factory;
 
-pub mod connectors;
+// pub mod connectors2;
+
 pub mod definition;
 
 pub use self::definition::*;
 
+pub struct Context {
+    pub module_context: ModuleContext,
+}
+
 // Not a trait object
 pub trait Component: Lifecycle + Sized + Send + Sync {
     fn get_definition() -> ComponentDefinition;
-    fn instantiate(context: Context, references: &ComponentReferences) -> Option<Self>;
+    fn instantiate(context: &ModuleContext, references: &ComponentReferences) -> Option<Self>;
 }
 
 pub trait Lifecycle {
@@ -30,7 +37,7 @@ impl Activator for ComponentManagerHandler {}
 
 impl ComponentManagerHandler {
     pub fn start(
-        context: &Context,
+        context: &ModuleContext,
         mut manager: ComponentManager,
     ) -> Result<ComponentManagerHandler> {
         manager.set_context(context);
@@ -82,7 +89,7 @@ impl ComponentManager {
         }
     }
 
-    fn set_context(&mut self, context: &Context) {
+    fn set_context(&mut self, context: &ModuleContext) {
         for (_, cc) in self.components.iter_mut() {
             cc.set_context(context);
         }
@@ -129,15 +136,15 @@ impl Deref for ComponentReferences {
 }
 
 pub struct ComponentController<T: Component> {
-    context: Option<Context>,
+    context: Option<ModuleContext>,
     definition: ComponentDefinition,
-    instantiate: fn(Context, &ComponentReferences) -> Option<T>,
+    instantiate: fn(&ModuleContext, &ComponentReferences) -> Option<T>,
     references: RwLock<ComponentReferences>,
     instances: RwLock<Vec<ComponentInstance<T>>>,
 }
 
 pub trait ComponentControllerT: Send + Sync {
-    fn set_context(&mut self, context: &Context);
+    fn set_context(&mut self, context: &ModuleContext);
     fn query_registry(&self);
     fn on_service_event(&self, event: &ServiceEvent);
     fn print_status(&self);
@@ -146,7 +153,7 @@ pub trait ComponentControllerT: Send + Sync {
 impl<T: Component> ComponentController<T> {
     pub fn new(
         definition: ComponentDefinition,
-        instantiate: fn(Context, &ComponentReferences) -> Option<T>,
+        instantiate: fn(&ModuleContext, &ComponentReferences) -> Option<T>,
     ) -> ComponentController<T> {
         ComponentController {
             context: None,
@@ -256,7 +263,7 @@ impl<T: Component> ComponentController<T> {
         }
     }
 
-    fn set_context(&mut self, context: &Context) {
+    fn set_context(&mut self, context: &ModuleContext) {
         self.context = Some(context.clone());
     }
 
@@ -264,7 +271,7 @@ impl<T: Component> ComponentController<T> {
 
     fn instantiate(&self) {
         if let Some(component) =
-            (self.instantiate)(self.context.clone().unwrap(), &self.references.read())
+            (self.instantiate)(self.context.as_ref().unwrap(), &self.references.read())
         {
             let ci = ComponentInstance::new(None, component);
             let mut instances = self.instances.write();
@@ -288,7 +295,7 @@ impl<T: Component> ComponentController<T> {
     }
 }
 impl<T: Component> ComponentControllerT for ComponentController<T> {
-    fn set_context(&mut self, context: &Context) {
+    fn set_context(&mut self, context: &ModuleContext) {
         self.set_context(context);
     }
 
@@ -324,7 +331,7 @@ impl<T: Component> ComponentInstance<T> {
 
 // impl ComponentBuilder {
 
-//     fn run(ctx: &Context) {
+//     fn run(ctx: &ModuleContext) {
 
 //     }
 
