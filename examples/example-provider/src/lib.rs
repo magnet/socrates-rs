@@ -82,5 +82,11 @@ impl socrates::component::Component for SimpleGreeter {
         println!("Instanciating me, {}", "SimpleGreeter");
         Some(SimpleGreeter)
     }
+
+    fn update(&self, field_id: usize, ctx: &socrates::module::Context,
+        references: &socrates::component::ComponentReferences,
+    ) -> Option<()> {
+        Some(())
+    }
 }
 impl socrates::component::Lifecycle for SimpleGreeter {}

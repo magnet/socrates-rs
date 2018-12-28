@@ -7,8 +7,6 @@ use super::module::*;
 use super::service::*;
 pub mod factory;
 
-// pub mod connectors2;
-
 pub mod definition;
 
 pub use self::definition::*;
@@ -21,6 +19,7 @@ pub struct Context {
 pub trait Component: Lifecycle + Sized + Send + Sync {
     fn get_definition() -> ComponentDefinition;
     fn instantiate(context: &ModuleContext, references: &ComponentReferences) -> Option<Self>;
+    fn update(&self, field_id: usize, context: &ModuleContext, references: &ComponentReferences) -> Option<()>;
 }
 
 pub trait Lifecycle {
@@ -273,7 +272,8 @@ impl<T: Component> ComponentController<T> {
         if let Some(component) =
             (self.instantiate)(self.context.as_ref().unwrap(), &self.references.read())
         {
-            let ci = ComponentInstance::new(None, component);
+            component.update(0, self.context.as_ref().unwrap(), &self.references.read()).unwrap();
+            let ci = ComponentInstance::new(None, component);           
             let mut instances = self.instances.write();
             instances.push(ci);
         }

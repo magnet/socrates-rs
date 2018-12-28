@@ -67,8 +67,8 @@ impl Drop for MyActivator {
 
 use parking_lot::Mutex;
 
-//#[derive(Component)]
-//#[custom_lifecycle]
+#[derive(Component)]
+#[custom_lifecycle]
 pub struct MyConsumer {
     _ctx: socrates::module::Context,
     greeter: Svc<dyn Greeter>,
@@ -101,53 +101,73 @@ impl Drop for MyConsumer {
     }
 }
 
+trait MyConsumerUpdater {
+    // fn update_greeter(greeter: Svc<dyn Greeter>, ctx: &socrates::module::Context) -> Option<()> {
+    //     use socrates::component::factory::*;
+    //     greeter.update(ctx)
+    // }
 
-impl socrates::component::Component for MyConsumer {
-    fn get_definition() -> socrates::component::ComponentDefinition {
-        socrates::component::ComponentDefinition {
-            name: "MyConsumer".to_string(),
-            provides: vec![],
-            references: vec![socrates::component::definition::Reference {
-                name: "greeter".to_string(),
-                svc_name: socrates::service::Service::get_name::<Greeter>().into(),
-                svc_query: socrates::service::query::ServiceQuery::by_type_id(
-                    socrates::service::Service::type_id::<Greeter>(),
-                ),
-                options: socrates::component::definition::ReferenceOptions {
-                    cardinality: socrates::component::definition::Cardinality::Mandatory,
-                    policy: socrates::component::definition::Policy::Static,
-                    policy_option: socrates::component::definition::PolicyOption::Greedy,
-                },
-            }],
-        }
+    fn update_dyn_greeter(greeter: &Mutex<Svc<dyn Greeter>>, ctx: &socrates::module::Context) -> Option<()> {
+        use socrates::component::factory::*;
+        greeter.update(ctx)
     }
-    fn instantiate(
-        ctx: &socrates::module::Context,
-        references: &socrates::component::ComponentReferences,
-    ) -> Option<MyConsumer> {
-        let ctx = &socrates::component::Context {
-            module_context: ctx.clone()
-        };
 
-        println!("Instanciating me, {}", "MyConsumer");
-        let _ctx = socrates::component::factory::build(ctx)?;
-        let greeter = socrates::component::factory::build(ctx)?;
-        let maybe_greeter = socrates::component::factory::build(ctx)?;
-        let greeters = socrates::component::factory::build(ctx)?;
-
-        let dyn_greeter = socrates::component::factory::build(ctx)?;
-        let dyn_maybe_greeter = socrates::component::factory::build(ctx)?;
-        let dyn_greeters = socrates::component::factory::build(ctx)?;
-
-        Some(MyConsumer {
-            _ctx,
-            greeter,
-            maybe_greeter,
-            greeters,
-
-            dyn_greeter,
-            dyn_maybe_greeter,
-            dyn_greeters
-        })
-    }
 }
+
+
+// impl socrates::component::Component for MyConsumer {
+//     fn get_definition() -> socrates::component::ComponentDefinition {
+//         socrates::component::ComponentDefinition {
+//             name: "MyConsumer".to_string(),
+//             provides: vec![],
+//             references: vec![socrates::component::definition::Reference {
+//                 name: "greeter".to_string(),
+//                 svc_name: socrates::service::Service::get_name::<Greeter>().into(),
+//                 svc_query: socrates::service::query::ServiceQuery::by_type_id(
+//                     socrates::service::Service::type_id::<Greeter>(),
+//                 ),
+//                 options: socrates::component::definition::ReferenceOptions {
+//                     cardinality: socrates::component::definition::Cardinality::Mandatory,
+//                     policy: socrates::component::definition::Policy::Static,
+//                     policy_option: socrates::component::definition::PolicyOption::Greedy,
+//                 },
+//             }],
+//         }
+//     }
+//     fn instantiate(
+//         ctx: &socrates::module::Context,
+//         references: &socrates::component::ComponentReferences,
+//     ) -> Option<MyConsumer> {
+//         let ctx = &socrates::component::Context {
+//             module_context: ctx.clone()
+//         };
+
+//         println!("Instanciating me, {}", "MyConsumer");
+//         let _ctx = socrates::component::factory::build(ctx)?;
+//         let greeter = socrates::component::factory::build(ctx)?;
+//         let maybe_greeter = socrates::component::factory::build(ctx)?;
+//         let greeters = socrates::component::factory::build(ctx)?;
+
+//         let dyn_greeter = socrates::component::factory::build(ctx)?;
+//         let dyn_maybe_greeter = socrates::component::factory::build(ctx)?;
+//         let dyn_greeters = socrates::component::factory::build(ctx)?;
+
+//         Some(MyConsumer {
+//             _ctx,
+//             greeter,
+//             maybe_greeter,
+//             greeters,
+
+//             dyn_greeter,
+//             dyn_maybe_greeter,
+//             dyn_greeters
+//         })
+//     }
+
+//     fn update(&self, field_id: usize, ctx: &socrates::module::Context,
+//         references: &socrates::component::ComponentReferences,
+//     ) -> Option<()> {
+//         println!("I'm updated");
+//         Some(())
+//     }
+// }

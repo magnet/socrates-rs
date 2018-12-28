@@ -5,17 +5,16 @@ use super::*;
 use super::super::module::Context as ModuleContext;
 use super::Context as ComponentContext;
 
-
-pub fn build<Source, T: Factory<Source>>(from: Source) -> Option<T> {
-     T::build(from)
-} 
+pub fn build<Source, Provided: Into<Source>, T: Factory<Source>>(from: Provided) -> Option<T> {
+    T::build(from.into())
+}
 
 pub trait Factory<Source>: Sized {
     fn build(from: Source) -> Option<Self>;
 }
 
-impl<'a, T: Service + ?Sized> Factory<&'a ModuleContext> for Svc<T> {
-    fn build(ctx: &'a ModuleContext) -> Option<Self> {
+impl<T: Service + ?Sized> Factory<&ModuleContext> for Svc<T> {
+    fn build(ctx: &ModuleContext) -> Option<Self> {
         ctx.get_first_service_typed::<T>()
     }
 }
@@ -38,24 +37,33 @@ impl Factory<&ModuleContext> for ModuleContext {
     }
 }
 
-impl<'a, T : Factory<&'a ModuleContext>> Factory<&'a ModuleContext> for parking_lot::Mutex<T> {
-    fn build(ctx: &'a ModuleContext) -> Option<Self> {
-        T::build(ctx).map(parking_lot::Mutex::new)
+impl<U, T: Factory<U>> Factory<U> for parking_lot::Mutex<T> {
+    fn build(ctx: U) -> Option<Self> {
+        T::build(ctx).map(|e| e.into())
     }
 }
 
-impl<'a, T: Factory<&'a ModuleContext>> Factory<&'a ModuleContext> for parking_lot::RwLock<T> {
-    fn build(ctx: &'a ModuleContext) -> Option<Self> {
-        T::build(ctx).map(parking_lot::RwLock::new)
+impl<U, T: Factory<U>> Factory<U> for parking_lot::RwLock<T> {
+    fn build(ctx: U) -> Option<Self> {
+        T::build(ctx).map(|e| e.into())
     }
 }
 
-impl<'a, T: Factory<&'a ModuleContext>> Factory<&'a ComponentContext> for T {
-    fn build(ctx: &'a ComponentContext) -> Option<Self> {
-        T::build(&ctx.module_context)
+impl<'a> From<&'a ComponentContext> for &'a ModuleContext {
+    fn from(ctx: &'a ComponentContext) -> Self {
+        &ctx.module_context
     }
 }
 
-// pub trait DynamicConnector<T>: Sized {
-//     fn update(ctx: &ModuleContext) -> Option<Self>;
-// }
+pub trait Update<Source>: Sized {
+    fn update(&self, ctx: Source) -> Option<()>;
+}
+
+impl<U, T: Factory<U>> Update<U> for parking_lot::Mutex<T> {
+    fn update(&self, ctx: U) -> Option<()> {
+        let new_value = T::build(ctx)?;
+        let mut this = self.lock();
+        *this = new_value;
+        Some(())
+    }
+}

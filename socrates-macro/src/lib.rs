@@ -35,10 +35,10 @@ pub fn component(input: TokenStream) -> TokenStream {
         for f in struct_def.fields.iter() {
             if let syn::Type::Path(ref path) = &f.ty {
                 let p = &path.path;
-                println!("contents {:?}", f.ident);
+                println!("base path {:?}", f.ident);
 
                 for seg in p.segments.iter() {
-                    println!("contents {:?}", seg.ident.to_string());
+                    println!("segment {:?}", seg.ident.to_string());
                     if let syn::PathArguments::AngleBracketed(ref type_params) = seg.arguments {
                         for arg in type_params.args.iter() {
                             if let syn::GenericArgument::Type(tpe) = arg {
@@ -47,7 +47,7 @@ pub fn component(input: TokenStream) -> TokenStream {
                                         if let syn::TypeParamBound::Trait(ref trt) = bound {
                                             for trt_seg in trt.path.segments.iter() {
                                                 println!(
-                                                    "contents {:?}",
+                                                    "trait {:?}",
                                                     trt_seg.ident.to_string()
                                                 );
                                                 references.push(ReferenceInfo {
@@ -68,7 +68,7 @@ pub fn component(input: TokenStream) -> TokenStream {
                                     }
                                 } else if let syn::Type::Path(ref p) = tpe {
                                     for trt_seg in p.path.segments.iter() {
-                                        println!("contents {:?}", trt_seg.ident.to_string());
+                                        println!("path {:?}", trt_seg.ident.to_string());
                                     }
                                 }
                             }
@@ -194,9 +194,16 @@ pub fn component(input: TokenStream) -> TokenStream {
                 }
             }
 
-            fn instantiate(ctx: socrates::module::Context, references: &socrates::component::ComponentReferences) -> #struct_name {
+            fn instantiate(ctx: &socrates::module::Context, references: &socrates::component::ComponentReferences) -> Option<#struct_name> {
                 println!("Instanciating me, {}, unimplemented!", #struct_name_as_string);
                 unimplemented!();
+            }
+
+            fn update(&self, field_id: usize, ctx: &socrates::module::Context,
+                    references: &socrates::component::ComponentReferences,
+                ) -> Option<()> {
+                    println!("I'm updated");
+                    Some(())
             }
         }
 
