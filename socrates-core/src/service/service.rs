@@ -9,19 +9,17 @@ pub trait Named {
 pub trait Service: Object + Send + Sync {}
 mopo!(Service);
 
-impl Service {
-    #[inline(always)]
-    pub fn get_name<T: Named + ?Sized>() -> &'static str {
-        <T>::type_name()
-    }
+#[inline(always)]
+pub fn service_name<T: Named + ?Sized>() -> &'static str {
+    <T>::type_name()
+}
 
-    #[inline(always)]
-    pub fn type_id<T: ?Sized + std::any::Any>() -> std::any::TypeId {
-        std::any::TypeId::of::<T>()
-    }
+#[inline(always)]
+pub fn service_type_id<T: ?Sized + std::any::Any>() -> std::any::TypeId {
+    std::any::TypeId::of::<T>()
+}
 
-    #[inline(always)]
-    pub fn any_type_id() -> std::any::TypeId {
-        Service::type_id::<dyn Service>()
-    }
+#[inline(always)]
+pub fn any_service_type_id() -> std::any::TypeId {
+    service_type_id::<dyn Service>()
 }

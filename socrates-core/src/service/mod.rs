@@ -27,4 +27,7 @@ pub use self::registry::ServiceRegistry;
 pub use self::service::Named;
 pub use self::service::Service;
 pub use self::service::ServiceId;
+pub use self::service::service_name;
+pub use self::service::service_type_id;
+pub use self::service::any_service_type_id;
 pub use self::svc::Svc;

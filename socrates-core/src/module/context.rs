@@ -59,8 +59,8 @@ impl Context {
         &self,
         svc: Box<dyn Service>,
     ) -> Result<ServiceRegistration> {
-        let svc_type_id = Service::type_id::<T>();
-        let svc_name = Service::get_name::<T>();
+        let svc_type_id = service_type_id::<T>();
+        let svc_name = service_name::<T>();
         self.register_service(svc_type_id, &svc_name, Default::default(), svc)
     }
 
@@ -232,12 +232,12 @@ impl Context {
     }
 
     pub fn get_first_service_typed<T: Service + ?Sized>(&self) -> Option<Svc<T>> {
-        let svc_type_id = Service::type_id::<T>();
+        let svc_type_id = service_type_id::<T>();
         self.get_first_service_by_type_id_typed(svc_type_id)
     }
 
     pub fn get_all_services_typed<T: Service + ?Sized>(&self) -> Vec<Svc<T>> {
-        let svc_type_id = Service::type_id::<T>();
+        let svc_type_id = service_type_id::<T>();
 
         self.get_all_services_by_type_id_typed(svc_type_id)
     }

@@ -48,7 +48,7 @@ impl<T: Service + ?Sized> TypeQuery<T> {
     #[inline(always)]
     pub fn by_type<U: Service + ?Sized>() -> TypeQuery<U> {
         TypeQuery {
-            type_id: Service::type_id::<U>(),
+            type_id: service_type_id::<U>(),
             _phantom: std::marker::PhantomData,
         }
     }
