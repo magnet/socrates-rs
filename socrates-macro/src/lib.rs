@@ -46,10 +46,7 @@ pub fn component(input: TokenStream) -> TokenStream {
                                     for bound in trait_obj.bounds.iter() {
                                         if let syn::TypeParamBound::Trait(ref trt) = bound {
                                             for trt_seg in trt.path.segments.iter() {
-                                                println!(
-                                                    "trait {:?}",
-                                                    trt_seg.ident.to_string()
-                                                );
+                                                println!("trait {:?}", trt_seg.ident.to_string());
                                                 references.push(ReferenceInfo {
                                                     name: f
                                                         .ident
