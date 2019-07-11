@@ -113,7 +113,7 @@ impl EventListener<ServiceEvent> for ComponentManager {
     }
 }
 
-use parking_lot::{RwLock};
+use parking_lot::RwLock;
 use std::sync::Arc;
 
 #[derive(Clone, Debug)]
