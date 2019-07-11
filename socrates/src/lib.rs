@@ -1,4 +1,3 @@
-#[macro_use]
 extern crate socrates_core;
 
 pub use socrates_core::*;
@@ -17,6 +16,5 @@ pub mod component {
     pub use socrates_core::component::*;
 }
 
-#[macro_use]
 extern crate socrates_macro;
 pub use socrates_macro::*;

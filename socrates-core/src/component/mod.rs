@@ -1,15 +1,15 @@
 // WIP experimenting
 // Playground for service components
 
+pub use self::definition::*;
 use super::common::*;
 use super::module::Context as ModuleContext;
 use super::module::*;
 use super::service::*;
-pub mod factory;
+use std::ops::Deref;
 
 pub mod definition;
-
-pub use self::definition::*;
+pub mod factory;
 
 pub struct Context {
     pub module_context: ModuleContext,
@@ -56,7 +56,6 @@ impl ComponentManagerHandler {
     }
 
     pub fn get_manager(&self) -> &ComponentManager {
-        use std::ops::Deref;
         self.manager.deref()
     }
 
@@ -114,7 +113,7 @@ impl EventListener<ServiceEvent> for ComponentManager {
     }
 }
 
-use parking_lot::{RwLock};
+use parking_lot::RwLock;
 use std::sync::Arc;
 
 #[derive(Clone, Debug)]
@@ -128,7 +127,6 @@ impl ComponentReferences {
         }
     }
 }
-use std::ops::Deref;
 
 impl Deref for ComponentReferences {
     type Target = HashMap<Arc<str>, im::OrdSet<ServiceCoreProps>>;
